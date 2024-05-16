@@ -15,6 +15,7 @@ from utils import getUser
 
 inter_communication_secret_global = getenv("INTER_COMMUNICATION_SECRET")
 
+
 @strawberry.mutation
 def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     """
@@ -354,6 +355,7 @@ def rejectMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
 #     created_sample = Member.parse_obj(membersdb.find_one({"_id": created_id}))
 #     return MemberType.from_pydantic(created_sample)
 
+
 @strawberry.mutation
 def updateMembersCid(
     info: Info,
@@ -380,6 +382,7 @@ def updateMembersCid(
 
     upd_ref = membersdb.update_many({"cid": old_cid}, updation)
     return upd_ref.modified_count
+
 
 # register all mutations
 mutations = [

@@ -44,7 +44,7 @@ DEBUG = getenv("SERVICES_DEBUG", "False").lower() in ("true", "1", "t")
 gql_app = GraphQLRouter(schema, graphiql=True, context_getter=get_context)
 app = FastAPI(
     debug=DEBUG,
-    title="CC Clubs Microservice",
-    desciption="Handles Data of Clubs and Members",
+    title="CC Members Microservice",
+    desciption="Handles Data of Members",
 )
 app.include_router(gql_app, prefix="/graphql")
