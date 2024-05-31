@@ -1,16 +1,13 @@
-import strawberry
-
-from fastapi.encoders import jsonable_encoder
 from typing import List
 
+import strawberry
+from fastapi.encoders import jsonable_encoder
+
 from db import membersdb
+from models import Member
 
 # import all models and types
-from otypes import Info
-
-from models import Member
-from otypes import SimpleClubInput, SimpleMemberInput
-from otypes import MemberType
+from otypes import Info, MemberType, SimpleClubInput, SimpleMemberInput
 
 """
 Member Queries
@@ -33,7 +30,9 @@ def member(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     uid = user["uid"]
     member_input = jsonable_encoder(memberInput)
 
-    if (member_input["cid"] != uid or user["role"] != "club") and user["role"] != "cc":
+    if (member_input["cid"] != uid or user["role"] != "club") and user[
+        "role"
+    ] != "cc":
         raise Exception("Not Authenticated to access this API")
 
     member = membersdb.find_one(
@@ -137,7 +136,9 @@ def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
 
             if len(roles_result) > 0:
                 result["roles"] = roles_result
-                members.append(MemberType.from_pydantic(Member.parse_obj(result)))
+                members.append(
+                    MemberType.from_pydantic(Member.parse_obj(result))
+                )
 
         return members
 
@@ -187,7 +188,9 @@ def currentMembers(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
 
             if len(roles_result) > 0:
                 result["roles"] = roles_result
-                members.append(MemberType.from_pydantic(Member.parse_obj(result)))
+                members.append(
+                    MemberType.from_pydantic(Member.parse_obj(result))
+                )
 
         return members
     else:
@@ -221,7 +224,9 @@ def pendingMembers(info: Info) -> List[MemberType]:
 
             if len(roles_result) > 0:
                 result["roles"] = roles_result
-                members.append(MemberType.from_pydantic(Member.parse_obj(result)))
+                members.append(
+                    MemberType.from_pydantic(Member.parse_obj(result))
+                )
 
         return members
     else:

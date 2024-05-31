@@ -1,9 +1,9 @@
-import requests
-from datetime import datetime
 import os
+from datetime import datetime
+
+import requests
 
 from db import membersdb
-
 from models import Member
 from otypes import MemberType
 
@@ -102,7 +102,8 @@ def getUser(uid, cookies=None):
             )
         else:
             request = requests.post(
-                "http://gateway/graphql", json={"query": query, "variables": variable}
+                "http://gateway/graphql",
+                json={"query": query, "variables": variable},
             )
 
         return request.json()["data"]["userProfile"]

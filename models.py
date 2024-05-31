@@ -1,13 +1,14 @@
+from typing import Any, List
+
 from bson import ObjectId
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    field_validator,
     ValidationInfo,
+    field_validator,
 )
 from pydantic_core import core_schema
-from typing import Any, List
 
 
 # for handling mongo ObjectIds
