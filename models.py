@@ -83,7 +83,7 @@ class Member(BaseModel):
         return v.lower()
 
     # TODO[pydantic]: The following keys were removed: `json_encoders`.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.  # noqa: E501
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
         str_strip_whitespace=True,
@@ -96,7 +96,8 @@ class Member(BaseModel):
         populate_by_name=True,
     )
 
-    # Separate Coordinator & other members roles option in frontend, for better filtering for all_members_query
+    # Separate Coordinator & other members roles option in frontend, 
+    # for better filtering for all_members_query
 
 
 # TODO: ADD Descriptions for non-direct fields

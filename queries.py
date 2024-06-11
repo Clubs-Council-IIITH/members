@@ -155,7 +155,7 @@ def currentMembers(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
     Scope: Anyone (Non-Admin Function)
     Return Type: List[MemberType]
     Input: SimpleClubInput (cid)
-    """
+    """  # noqa: E501
     user = info.context.user
     if user is None:
         role = "public"

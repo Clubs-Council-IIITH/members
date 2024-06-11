@@ -124,7 +124,8 @@ def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
             role["end_year"] = None
         role_new = role.copy()
 
-        # if role's start_year, end_year, name is same as existing role, then keep the existing approved status
+        # if role's start_year, end_year, name is same as existing role, 
+        # then keep the existing approved status
         found_existing_role = False
         for i in member_roles:
             if (
@@ -166,7 +167,7 @@ def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
 def deleteMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     """
     Mutation to delete an already existing member (role) of that specific 'club'
-    """
+    """  # noqa: E501
     user = info.context.user
     if user is None:
         raise Exception("Not Authenticated")
@@ -328,7 +329,8 @@ def rejectMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
 
 
 # @strawberry.mutation
-# def leaveClubMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
+# def leaveClubMember(memberInput: SimpleMemberInput, info: Info) -> 
+# MemberType:
 #     user = info.context.user
 #     if user is None:
 #         raise Exception("Not Authenticated")
@@ -352,7 +354,8 @@ def rejectMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
 #         {"$set": {"end_year": datetime.now().year}},
 #     )
 
-#     created_sample = Member.parse_obj(membersdb.find_one({"_id": created_id}))
+#     created_sample = Member.parse_obj(membersdb.find_one(
+# {"_id": created_id}))
 #     return MemberType.from_pydantic(created_sample)
 
 

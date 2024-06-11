@@ -13,7 +13,8 @@ inter_communication_secret = os.getenv("INTER_COMMUNICATION_SECRET")
 def non_deleted_members(member_input) -> MemberType:
     """
     Function to return non-deleted members for a particular cid, uid
-    Only to be used in admin functions, as it returns both approved/non-approved members.
+    Only to be used in admin functions, 
+    as it returns both approved/non-approved members.
     """
     updated_sample = membersdb.find_one(
         {
