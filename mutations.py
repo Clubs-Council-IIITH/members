@@ -1,17 +1,15 @@
-import strawberry
-
-from fastapi.encoders import jsonable_encoder
 from datetime import datetime
 from os import getenv
 
+import strawberry
+from fastapi.encoders import jsonable_encoder
+
 from db import membersdb
-from utils import unique_roles_id, non_deleted_members
+from models import Member
 
 # import all models and types
-from otypes import Info
-from models import Member
-from otypes import FullMemberInput, SimpleMemberInput, MemberType
-from utils import getUser
+from otypes import FullMemberInput, Info, MemberType, SimpleMemberInput
+from utils import getUser, non_deleted_members, unique_roles_id
 
 inter_communication_secret_global = getenv("INTER_COMMUNICATION_SECRET")
 
@@ -29,7 +27,9 @@ def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     uid = user["uid"]
     member_input = jsonable_encoder(memberInput.to_pydantic())
 
-    if (member_input["cid"] != uid or user["role"] != "club") and user["role"] != "cc":
+    if (member_input["cid"] != uid or user["role"] != "club") and user[
+        "role"
+    ] != "cc":
         raise Exception("Not Authenticated to access this API")
 
     if membersdb.find_one(
@@ -91,7 +91,9 @@ def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     uid = user["uid"]
     member_input = jsonable_encoder(memberInput.to_pydantic())
 
-    if (member_input["cid"] != uid or user["role"] != "club") and user["role"] != "cc":
+    if (member_input["cid"] != uid or user["role"] != "club") and user[
+        "role"
+    ] != "cc":
         raise Exception("Not Authenticated to access this API")
 
     if len(member_input["roles"]) == 0:
@@ -124,7 +126,7 @@ def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
             role["end_year"] = None
         role_new = role.copy()
 
-        # if role's start_year, end_year, name is same as existing role, 
+        # if role's start_year, end_year, name is same as existing role,
         # then keep the existing approved status
         found_existing_role = False
         for i in member_roles:
@@ -175,7 +177,9 @@ def deleteMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     uid = user["uid"]
     member_input = jsonable_encoder(memberInput)
 
-    if (member_input["cid"] != uid or user["role"] != "club") and user["role"] != "cc":
+    if (member_input["cid"] != uid or user["role"] != "club") and user[
+        "role"
+    ] != "cc":
         raise Exception("Not Authenticated to access this API")
 
     existing_data = membersdb.find_one(
@@ -329,7 +333,7 @@ def rejectMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
 
 
 # @strawberry.mutation
-# def leaveClubMember(memberInput: SimpleMemberInput, info: Info) -> 
+# def leaveClubMember(memberInput: SimpleMemberInput, info: Info) ->
 # MemberType:
 #     user = info.context.user
 #     if user is None:

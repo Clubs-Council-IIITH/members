@@ -1,14 +1,13 @@
 import json
-import strawberry
+from functools import cached_property
+from typing import Dict, Optional, Union
 
+import strawberry
 from strawberry.fastapi import BaseContext
 from strawberry.types import Info as _Info
 from strawberry.types.info import RootValueType
 
-from typing import Union, Dict, Optional
-from functools import cached_property
-
-from models import PyObjectId, Member, Roles
+from models import Member, PyObjectId, Roles
 
 
 # custom context class
@@ -60,7 +59,9 @@ class RolesInput:
     pass
 
 
-@strawberry.experimental.pydantic.input(model=Member, fields=["cid", "uid", "roles"])
+@strawberry.experimental.pydantic.input(
+    model=Member, fields=["cid", "uid", "roles"]
+)
 class FullMemberInput:
     poc: Optional[bool] = strawberry.UNSET
 
