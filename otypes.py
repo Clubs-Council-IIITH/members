@@ -1,3 +1,4 @@
+from enum import Enum
 import json
 from functools import cached_property
 from typing import Dict, Optional, Union
@@ -7,7 +8,8 @@ from strawberry.fastapi import BaseContext
 from strawberry.types import Info as _Info
 from strawberry.types.info import RootValueType
 
-from models import Member, PyObjectId, Roles
+
+from models import Certificate, Member, PyObjectId, Roles
 
 
 # custom context class
@@ -59,9 +61,7 @@ class RolesInput:
     pass
 
 
-@strawberry.experimental.pydantic.input(
-    model=Member, fields=["cid", "uid", "roles"]
-)
+@strawberry.experimental.pydantic.input(model=Member, fields=["cid", "uid", "roles"])
 class FullMemberInput:
     poc: Optional[bool] = strawberry.UNSET
 
@@ -76,3 +76,20 @@ class SimpleMemberInput:
 @strawberry.input
 class SimpleClubInput:
     cid: str
+
+
+@strawberry.enum
+class CertificateStatusType(Enum):
+    PENDING_CC = "pending_cc"
+    PENDING_SLO = "pending_slo"
+    APPROVED = "approved"
+
+
+@strawberry.experimental.pydantic.type(model=Certificate, all_fields=True)
+class CertificateType:
+    pass
+
+
+@strawberry.input
+class CertificateInput:
+    user_id: str

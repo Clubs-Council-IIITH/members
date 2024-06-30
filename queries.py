@@ -3,11 +3,11 @@ from typing import List
 import strawberry
 from fastapi.encoders import jsonable_encoder
 
-from db import membersdb
-from models import Member
+from db import membersdb, certificatesdb
+from models import Certificate, CertificateStatus, Member, PyObjectId
 
 # import all models and types
-from otypes import Info, MemberType, SimpleClubInput, SimpleMemberInput
+from otypes import CertificateType, Info, MemberType, SimpleClubInput, SimpleMemberInput
 
 """
 Member Queries
@@ -30,9 +30,7 @@ def member(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     uid = user["uid"]
     member_input = jsonable_encoder(memberInput)
 
-    if (member_input["cid"] != uid or user["role"] != "club") and user[
-        "role"
-    ] != "cc":
+    if (member_input["cid"] != uid or user["role"] != "club") and user["role"] != "cc":
         raise Exception("Not Authenticated to access this API")
 
     member = membersdb.find_one(
@@ -136,9 +134,7 @@ def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
 
             if len(roles_result) > 0:
                 result["roles"] = roles_result
-                members.append(
-                    MemberType.from_pydantic(Member.parse_obj(result))
-                )
+                members.append(MemberType.from_pydantic(Member.parse_obj(result)))
 
         return members
 
@@ -188,9 +184,7 @@ def currentMembers(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
 
             if len(roles_result) > 0:
                 result["roles"] = roles_result
-                members.append(
-                    MemberType.from_pydantic(Member.parse_obj(result))
-                )
+                members.append(MemberType.from_pydantic(Member.parse_obj(result)))
 
         return members
     else:
@@ -224,13 +218,59 @@ def pendingMembers(info: Info) -> List[MemberType]:
 
             if len(roles_result) > 0:
                 result["roles"] = roles_result
-                members.append(
-                    MemberType.from_pydantic(Member.parse_obj(result))
-                )
+                members.append(MemberType.from_pydantic(Member.parse_obj(result)))
 
         return members
     else:
         raise Exception("No Member Result/s Found")
+
+
+@strawberry.field
+def get_user_certificates(info: Info) -> List[CertificateType]:
+    user = info.context.user
+    if user is None:
+        raise Exception("Not Authenticated")
+
+    certificates = certificatesdb.find({"user_id": user["uid"]})
+    return [
+        CertificateType.from_pydantic(Certificate.parse_obj(cert))
+        for cert in certificates
+    ]
+
+
+@strawberry.field
+def get_pending_certificates(info: Info) -> List[CertificateType]:
+    user = info.context.user
+    if user is None or user["role"] not in ["cc", "slo"]:
+        raise Exception("Not Authenticated or Unauthorized")
+
+    status = (
+        CertificateStatus.PENDING_CC
+        if user["role"] == "cc"
+        else CertificateStatus.PENDING_SLO
+    )
+
+    certificates = certificatesdb.find({"status": status})
+    return [
+        CertificateType.from_pydantic(Certificate.parse_obj(cert))
+        for cert in certificates
+    ]
+
+
+@strawberry.field
+def verify_certificate(certificate_number: str, key: str) -> CertificateType:
+    certificate = certificatesdb.find_one(
+        {
+            "certificate_number": certificate_number,
+            "_id": PyObjectId(key),
+            "status": CertificateStatus.APPROVED,
+        }
+    )
+
+    if not certificate:
+        raise Exception("Invalid certificate or not approved")
+
+    return CertificateType.from_pydantic(Certificate.parse_obj(certificate))
 
 
 # register all queries
@@ -240,4 +280,7 @@ queries = [
     members,
     currentMembers,
     pendingMembers,
+    get_user_certificates,
+    get_pending_certificates,
+    verify_certificate,
 ]

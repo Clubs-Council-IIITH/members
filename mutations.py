@@ -4,11 +4,18 @@ from os import getenv
 import strawberry
 from fastapi.encoders import jsonable_encoder
 
-from db import membersdb
-from models import Member
+from db import membersdb, certificatesdb
+from models import Certificate, CertificateStatus, Member
 
 # import all models and types
-from otypes import FullMemberInput, Info, MemberType, SimpleMemberInput
+from otypes import (
+    CertificateInput,
+    CertificateType,
+    FullMemberInput,
+    Info,
+    MemberType,
+    SimpleMemberInput,
+)
 from utils import getUser, non_deleted_members, unique_roles_id
 
 inter_communication_secret_global = getenv("INTER_COMMUNICATION_SECRET")
@@ -27,9 +34,7 @@ def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     uid = user["uid"]
     member_input = jsonable_encoder(memberInput.to_pydantic())
 
-    if (member_input["cid"] != uid or user["role"] != "club") and user[
-        "role"
-    ] != "cc":
+    if (member_input["cid"] != uid or user["role"] != "club") and user["role"] != "cc":
         raise Exception("Not Authenticated to access this API")
 
     if membersdb.find_one(
@@ -91,9 +96,7 @@ def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     uid = user["uid"]
     member_input = jsonable_encoder(memberInput.to_pydantic())
 
-    if (member_input["cid"] != uid or user["role"] != "club") and user[
-        "role"
-    ] != "cc":
+    if (member_input["cid"] != uid or user["role"] != "club") and user["role"] != "cc":
         raise Exception("Not Authenticated to access this API")
 
     if len(member_input["roles"]) == 0:
@@ -177,9 +180,7 @@ def deleteMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     uid = user["uid"]
     member_input = jsonable_encoder(memberInput)
 
-    if (member_input["cid"] != uid or user["role"] != "club") and user[
-        "role"
-    ] != "cc":
+    if (member_input["cid"] != uid or user["role"] != "club") and user["role"] != "cc":
         raise Exception("Not Authenticated to access this API")
 
     existing_data = membersdb.find_one(
@@ -391,6 +392,85 @@ def updateMembersCid(
     return upd_ref.modified_count
 
 
+@strawberry.mutation
+def request_certificate(
+    certificate_input: CertificateInput, info: Info
+) -> CertificateType:
+    user = info.context.user
+    if user is None:
+        raise Exception("Not Authenticated")
+
+    # Generate certificate number
+    year = datetime.now().year
+    next_year = year + 1
+    year_code = f"{str(year)[2:]}{str(next_year)[2:]}"
+
+    count = certificatesdb.count_documents({}) + 1
+    certificate_number = f"SLC/{year_code}/{count:03d}"
+
+    # TODO: Generate certificate data (update template rendering logic here)
+    certificate_data = f"Certificate data for {user['uid']}"  # Placeholder
+
+    new_certificate = Certificate(
+        user_id=user["uid"],
+        certificate_number=certificate_number,
+        certificate_data=certificate_data,
+    )
+
+    created_id = certificatesdb.insert_one(
+        jsonable_encoder(new_certificate)
+    ).inserted_id
+    created_certificate = Certificate.parse_obj(
+        certificatesdb.find_one({"_id": created_id})
+    )
+
+    return CertificateType.from_pydantic(created_certificate)
+
+
+@strawberry.mutation
+def approve_certificate(certificate_number: str, info: Info) -> CertificateType:
+    user = info.context.user
+    if user is None or user["role"] not in ["cc", "slo"]:
+        raise Exception("Not Authenticated or Unauthorized")
+
+    certificate = certificatesdb.find_one({"certificate_number": certificate_number})
+    if not certificate:
+        raise Exception("Certificate not found")
+
+    current_status = certificate["status"]
+    new_status = (
+        CertificateStatus.PENDING_SLO
+        if current_status == CertificateStatus.PENDING_CC
+        else (
+            CertificateStatus.APPROVED
+            if current_status == CertificateStatus.PENDING_SLO
+            else current_status
+        )
+    )
+
+    if new_status == CertificateStatus.APPROVED:
+        certificatesdb.update_one(
+            {"certificate_number": certificate_number},
+            {
+                "$set": {
+                    "status": new_status,
+                    "approved_at": datetime.now(),
+                    "approver_id": user["uid"],
+                }
+            },
+        )
+    else:
+        certificatesdb.update_one(
+            {"certificate_number": certificate_number}, {"$set": {"status": new_status}}
+        )
+
+    updated_certificate = Certificate.parse_obj(
+        certificatesdb.find_one({"certificate_number": certificate_number})
+    )
+
+    return CertificateType.from_pydantic(updated_certificate)
+
+
 # register all mutations
 mutations = [
     createMember,
@@ -399,4 +479,6 @@ mutations = [
     approveMember,
     rejectMember,
     updateMembersCid,
+    request_certificate,
+    approve_certificate,
 ]

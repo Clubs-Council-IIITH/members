@@ -11,6 +11,10 @@ from pydantic import (
 from pydantic_core import core_schema
 
 
+from enum import Enum
+from datetime import datetime
+
+
 # for handling mongo ObjectIds
 class PyObjectId(ObjectId):
     @classmethod
@@ -68,6 +72,29 @@ class Roles(BaseModel):
     )
 
 
+class CertificateStatus(str, Enum):
+    PENDING_CC = "pending_cc"
+    PENDING_SLO = "pending_slo"
+    APPROVED = "approved"
+
+
+class Certificate(BaseModel):
+    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
+    user_id: str
+    certificate_number: str
+    status: CertificateStatus = CertificateStatus.PENDING_CC
+    requested_at: datetime = Field(default_factory=datetime.now)
+    approved_at: datetime | None = None
+    approver_id: str | None = None
+    certificate_data: str  # Storing the rendered template
+
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        json_encoders={ObjectId: str},
+        populate_by_name=True,
+    )
+
+
 class Member(BaseModel):
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     cid: str = Field(..., description="Club ID")
@@ -77,6 +104,7 @@ class Member(BaseModel):
     )
 
     poc: bool = Field(default_factory=(lambda: 0 == 1), description="Club POC")
+    certificates: List[Certificate] = Field(default_factory=list)
 
     @field_validator("uid", mode="before")
     @classmethod
