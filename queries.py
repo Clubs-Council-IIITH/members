@@ -4,10 +4,18 @@ import strawberry
 from fastapi.encoders import jsonable_encoder
 
 from db import membersdb, certificatesdb
-from models import Certificate, CertificateStatus, Member, PyObjectId
+from models import Certificate, Member, PyObjectId
 
 # import all models and types
-from otypes import CertificateType, Info, MemberType, SimpleClubInput, SimpleMemberInput
+from otypes import (
+    CertificateType,
+    Info,
+    MemberType,
+    SimpleClubInput,
+    SimpleMemberInput,
+)
+
+from enums import CertificateStatusType
 
 """
 Member Queries
@@ -226,7 +234,7 @@ def pendingMembers(info: Info) -> List[MemberType]:
 
 
 @strawberry.field
-def get_user_certificates(info: Info) -> List[CertificateType]:
+def getUserCertificates(info: Info) -> List[CertificateType]:
     user = info.context.user
     if user is None:
         raise Exception("Not Authenticated")
@@ -239,15 +247,15 @@ def get_user_certificates(info: Info) -> List[CertificateType]:
 
 
 @strawberry.field
-def get_pending_certificates(info: Info) -> List[CertificateType]:
+def getPendingCertificates(info: Info) -> List[CertificateType]:
     user = info.context.user
     if user is None or user["role"] not in ["cc", "slo"]:
         raise Exception("Not Authenticated or Unauthorized")
 
     status = (
-        CertificateStatus.PENDING_CC
+        CertificateStatusType.PENDING_CC
         if user["role"] == "cc"
-        else CertificateStatus.PENDING_SLO
+        else CertificateStatusType.PENDING_SLO
     )
 
     certificates = certificatesdb.find({"status": status})
@@ -258,12 +266,12 @@ def get_pending_certificates(info: Info) -> List[CertificateType]:
 
 
 @strawberry.field
-def verify_certificate(certificate_number: str, key: str) -> CertificateType:
+def verifyCertificate(certificate_number: str, key: str) -> CertificateType:
     certificate = certificatesdb.find_one(
         {
             "certificate_number": certificate_number,
             "_id": PyObjectId(key),
-            "status": CertificateStatus.APPROVED,
+            "status": CertificateStatusType.APPROVED,
         }
     )
 
@@ -280,7 +288,7 @@ queries = [
     members,
     currentMembers,
     pendingMembers,
-    get_user_certificates,
-    get_pending_certificates,
-    verify_certificate,
+    getUserCertificates,
+    getPendingCertificates,
+    verifyCertificate,
 ]

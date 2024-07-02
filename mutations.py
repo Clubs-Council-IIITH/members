@@ -5,7 +5,7 @@ import strawberry
 from fastapi.encoders import jsonable_encoder
 
 from db import membersdb, certificatesdb
-from models import Certificate, CertificateStatus, Member
+from models import Certificate, Member
 
 # import all models and types
 from otypes import (
@@ -16,6 +16,7 @@ from otypes import (
     MemberType,
     SimpleMemberInput,
 )
+from enums import CertificateStatusType
 from utils import getUser, non_deleted_members, unique_roles_id
 
 inter_communication_secret_global = getenv("INTER_COMMUNICATION_SECRET")
@@ -393,7 +394,7 @@ def updateMembersCid(
 
 
 @strawberry.mutation
-def request_certificate(
+def requestCertificate(
     certificate_input: CertificateInput, info: Info
 ) -> CertificateType:
     user = info.context.user
@@ -406,7 +407,7 @@ def request_certificate(
     year_code = f"{str(year)[2:]}{str(next_year)[2:]}"
 
     count = certificatesdb.count_documents({}) + 1
-    certificate_number = f"SLC/{year_code}/{count:03d}"
+    certificate_number = f"SLC/{year_code}/{count:04d}"
 
     # TODO: Generate certificate data (update template rendering logic here)
     certificate_data = f"Certificate data for {user['uid']}"  # Placeholder
@@ -415,6 +416,7 @@ def request_certificate(
         user_id=user["uid"],
         certificate_number=certificate_number,
         certificate_data=certificate_data,
+        request_reason=certificate_input.request_reason,
     )
 
     created_id = certificatesdb.insert_one(
@@ -428,7 +430,7 @@ def request_certificate(
 
 
 @strawberry.mutation
-def approve_certificate(certificate_number: str, info: Info) -> CertificateType:
+def approveCertificate(certificate_number: str, info: Info) -> CertificateType:
     user = info.context.user
     if user is None or user["role"] not in ["cc", "slo"]:
         raise Exception("Not Authenticated or Unauthorized")
@@ -439,16 +441,16 @@ def approve_certificate(certificate_number: str, info: Info) -> CertificateType:
 
     current_status = certificate["status"]
     new_status = (
-        CertificateStatus.PENDING_SLO
-        if current_status == CertificateStatus.PENDING_CC
+        CertificateStatusType.PENDING_SLO
+        if current_status == CertificateStatusType.PENDING_CC
         else (
-            CertificateStatus.APPROVED
-            if current_status == CertificateStatus.PENDING_SLO
+            CertificateStatusType.APPROVED
+            if current_status == CertificateStatusType.PENDING_SLO
             else current_status
         )
     )
 
-    if new_status == CertificateStatus.APPROVED:
+    if new_status == CertificateStatusType.APPROVED:
         certificatesdb.update_one(
             {"certificate_number": certificate_number},
             {
@@ -479,6 +481,6 @@ mutations = [
     approveMember,
     rejectMember,
     updateMembersCid,
-    request_certificate,
-    approve_certificate,
+    requestCertificate,
+    approveCertificate,
 ]

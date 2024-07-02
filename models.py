@@ -11,8 +11,8 @@ from pydantic import (
 from pydantic_core import core_schema
 
 
-from enum import Enum
 from datetime import datetime
+from enums import CertificateStatusType
 
 
 # for handling mongo ObjectIds
@@ -72,21 +72,16 @@ class Roles(BaseModel):
     )
 
 
-class CertificateStatus(str, Enum):
-    PENDING_CC = "pending_cc"
-    PENDING_SLO = "pending_slo"
-    APPROVED = "approved"
-
-
 class Certificate(BaseModel):
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     user_id: str
     certificate_number: str
-    status: CertificateStatus = CertificateStatus.PENDING_CC
+    status: CertificateStatusType = CertificateStatusType.PENDING_CC
     requested_at: datetime = Field(default_factory=datetime.now)
     approved_at: datetime | None = None
     approver_id: str | None = None
     certificate_data: str  # Storing the rendered template
+    request_reason: str | None = None
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,

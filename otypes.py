@@ -1,4 +1,3 @@
-from enum import Enum
 import json
 from functools import cached_property
 from typing import Dict, Optional, Union
@@ -66,6 +65,11 @@ class FullMemberInput:
     poc: Optional[bool] = strawberry.UNSET
 
 
+@strawberry.experimental.pydantic.type(model=Certificate, all_fields=True)
+class CertificateType:
+    pass
+
+
 @strawberry.input
 class SimpleMemberInput:
     cid: str
@@ -78,13 +82,6 @@ class SimpleClubInput:
     cid: str
 
 
-@strawberry.enum
-class CertificateStatusType(Enum):
-    PENDING_CC = "pending_cc"
-    PENDING_SLO = "pending_slo"
-    APPROVED = "approved"
-
-
 @strawberry.experimental.pydantic.type(model=Certificate, all_fields=True)
 class CertificateType:
     pass
@@ -92,4 +89,4 @@ class CertificateType:
 
 @strawberry.input
 class CertificateInput:
-    user_id: str
+    request_reason: Optional[str] = None
