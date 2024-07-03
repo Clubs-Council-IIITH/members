@@ -76,7 +76,7 @@ class Certificate(BaseModel):
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     user_id: str
     certificate_number: str
-    status: CertificateStatusType = CertificateStatusType.PENDING_CC
+    status: str = Field(default=CertificateStatusType.PENDING_CC.value)
     requested_at: datetime = Field(default_factory=datetime.now)
     approved_at: datetime | None = None
     approver_id: str | None = None
@@ -88,6 +88,12 @@ class Certificate(BaseModel):
         json_encoders={ObjectId: str},
         populate_by_name=True,
     )
+
+    @field_validator("status")
+    def validate_status(cls, v):
+        if v not in [e.value for e in CertificateStatusType]:
+            raise ValueError(f"Invalid status: {v}")
+        return v
 
 
 class Member(BaseModel):

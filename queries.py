@@ -248,21 +248,30 @@ def getUserCertificates(info: Info) -> List[CertificateType]:
 
 @strawberry.field
 def getPendingCertificates(info: Info) -> List[CertificateType]:
+    """
+    Description: Returns all pending certificates for CC and SLO roles.
+    Scope: CC, SLO
+    Return Type: List[CertificateType]
+    Input: None
+    """
     user = info.context.user
     if user is None or user["role"] not in ["cc", "slo"]:
-        raise Exception("Not Authenticated or Unauthorized")
+        raise Exception("Not Authenticated")
 
-    status = (
-        CertificateStatusType.PENDING_CC
-        if user["role"] == "cc"
-        else CertificateStatusType.PENDING_SLO
-    )
-
-    certificates = certificatesdb.find({"status": status})
-    return [
-        CertificateType.from_pydantic(Certificate.parse_obj(cert))
-        for cert in certificates
+    pending_statuses = [
+        CertificateStatusType.PENDING_CC.value,
+        CertificateStatusType.PENDING_SLO.value,
     ]
+    results = certificatesdb.find({"status": {"$in": pending_statuses}})
+
+    if results:
+        certificates = [
+            CertificateType.from_pydantic(Certificate.parse_obj(cert))
+            for cert in results
+        ]
+        return certificates
+    else:
+        return []
 
 
 @strawberry.field
