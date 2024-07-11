@@ -431,46 +431,54 @@ def requestCertificate(
 
 @strawberry.mutation
 def approveCertificate(certificate_number: str, info: Info) -> CertificateType:
+
     user = info.context.user
+
     if user is None or user["role"] not in ["cc", "slo"]:
         raise Exception("Not Authenticated or Unauthorized")
 
     certificate = certificatesdb.find_one({"certificate_number": certificate_number})
+
     if not certificate:
         raise Exception("Certificate not found")
 
     current_status = certificate["status"]
-    new_status = (
-        CertificateStatusType.PENDING_SLO
-        if current_status == CertificateStatusType.PENDING_CC
-        else (
-            CertificateStatusType.APPROVED
-            if current_status == CertificateStatusType.PENDING_SLO
-            else current_status
-        )
-    )
 
-    if new_status == CertificateStatusType.APPROVED:
-        certificatesdb.update_one(
-            {"certificate_number": certificate_number},
-            {
-                "$set": {
-                    "status": new_status,
-                    "approved_at": datetime.now(),
-                    "approver_id": user["uid"],
-                }
-            },
-        )
-    else:
-        certificatesdb.update_one(
-            {"certificate_number": certificate_number}, {"$set": {"status": new_status}}
-        )
+    new_status = current_status
+    if (
+        current_status == CertificateStatusType.PENDING_CC.value
+        and user["role"] == "cc"
+    ):
+        new_status = CertificateStatusType.PENDING_SLO.value
+    elif (
+        current_status == CertificateStatusType.PENDING_SLO.value
+        and user["role"] == "slo"
+    ):
+        new_status = CertificateStatusType.APPROVED.value
+
+    if new_status != current_status:
+        if new_status == CertificateStatusType.APPROVED.value:
+            certificatesdb.update_one(
+                {"certificate_number": certificate_number},
+                {
+                    "$set": {
+                        "status": new_status,
+                        "approved_at": datetime.now(),
+                        "approver_id": user["uid"],
+                    }
+                },
+            )
+        else:
+            certificatesdb.update_one(
+                {"certificate_number": certificate_number},
+                {"$set": {"status": new_status}},
+            )
 
     updated_certificate = Certificate.parse_obj(
         certificatesdb.find_one({"certificate_number": certificate_number})
     )
-
-    return CertificateType.from_pydantic(updated_certificate)
+    result = CertificateType.from_pydantic(updated_certificate)
+    return result
 
 
 # register all mutations
