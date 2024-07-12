@@ -409,13 +409,22 @@ def requestCertificate(
     count = certificatesdb.count_documents({}) + 1
     certificate_number = f"SLC/{year_code}/{count:04d}"
 
-    # TODO: Generate certificate data (update template rendering logic here)
-    certificate_data = f"Certificate data for {user['uid']}"  # Placeholder
+    certificate_data = {
+            "user_id": user["uid"],
+            "memberships": [
+                {
+                    "startYear": m.startYear,
+                    "endYear": m.endYear,
+                    "name": m.name,
+                    "cid": m.cid
+                } for m in certificate_input.memberships
+            ]
+        }
 
     new_certificate = Certificate(
         user_id=user["uid"],
         certificate_number=certificate_number,
-        certificate_data=certificate_data,
+        certificate_data=str(certificate_data),
         request_reason=certificate_input.request_reason,
     )
 

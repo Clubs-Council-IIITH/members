@@ -1,6 +1,6 @@
 import json
 from functools import cached_property
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, Union, List
 
 import strawberry
 from strawberry.fastapi import BaseContext
@@ -87,6 +87,21 @@ class CertificateType:
     pass
 
 
+@strawberry.type
+class MembershipType:
+    startYear: int
+    endYear: Optional[int]
+    name: str
+    cid: str
+
+@strawberry.input
+class MembershipInput:
+    startYear: int
+    endYear: Optional[int]
+    name: str
+    cid: str
+
 @strawberry.input
 class CertificateInput:
     request_reason: Optional[str] = None
+    memberships: List[MembershipInput]
