@@ -279,12 +279,12 @@ def verifyCertificate(certificate_number: str, key: str) -> CertificateType:
     certificate = certificatesdb.find_one(
         {
             "certificate_number": certificate_number,
-            "_id": PyObjectId(key),
-            "status": CertificateStatusType.APPROVED,
+            "status": CertificateStatusType.APPROVED.value,
         }
     )
+    print(certificate)
 
-    if not certificate:
+    if not certificate or str(certificate['_id']) == key:
         raise Exception("Invalid certificate or not approved")
 
     return CertificateType.from_pydantic(Certificate.parse_obj(certificate))
