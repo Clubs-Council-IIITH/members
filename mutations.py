@@ -4,8 +4,8 @@ from os import getenv
 import strawberry
 from fastapi.encoders import jsonable_encoder
 
-from db import membersdb, certificatesdb
-from models import Certificate, Member
+from db import certificatesdb, membersdb
+from models import Certificate, CertificateStatusType, Member
 
 # import all models and types
 from otypes import (
@@ -16,7 +16,6 @@ from otypes import (
     MemberType,
     SimpleMemberInput,
 )
-from enums import CertificateStatusType
 from utils import getUser, non_deleted_members, unique_roles_id
 
 inter_communication_secret_global = getenv("INTER_COMMUNICATION_SECRET")

@@ -1,5 +1,8 @@
+from datetime import datetime
+from enum import Enum
 from typing import Any, List
 
+import strawberry
 from bson import ObjectId
 from pydantic import (
     BaseModel,
@@ -9,10 +12,6 @@ from pydantic import (
     field_validator,
 )
 from pydantic_core import core_schema
-
-
-from datetime import datetime
-from enums import CertificateStatusType
 
 
 # for handling mongo ObjectIds
@@ -37,6 +36,13 @@ class PyObjectId(ObjectId):
     @classmethod
     def __get_pydantic_json_schema__(cls, field_schema):
         field_schema.update(type="string")
+
+
+@strawberry.enum
+class CertificateStatusType(Enum):
+    PENDING_CC = "pending_cc"
+    PENDING_SLO = "pending_slo"
+    APPROVED = "approved"
 
 
 class Roles(BaseModel):
@@ -76,7 +82,9 @@ class Certificate(BaseModel):
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     user_id: str
     certificate_number: str
-    status: str = Field(default=CertificateStatusType.PENDING_CC.value)
+    status: str = Field(
+        default=CertificateStatusType.PENDING_CC.value
+    )
     requested_at: datetime = Field(default_factory=datetime.now)
     approved_at: datetime | None = None
     approver_id: str | None = None
@@ -85,6 +93,12 @@ class Certificate(BaseModel):
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
+        str_strip_whitespace=True,
+        str_max_length=5000,
+        validate_assignment=True,
+        validate_default=True,
+        validate_return=True,
+        extra="forbid",
         json_encoders={ObjectId: str},
         populate_by_name=True,
     )

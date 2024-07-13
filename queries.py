@@ -3,10 +3,10 @@ from typing import List
 import strawberry
 from fastapi.encoders import jsonable_encoder
 
-from db import membersdb, certificatesdb
-from models import Certificate, Member, PyObjectId
+from db import certificatesdb, membersdb
 
 # import all models and types
+from models import Certificate, CertificateStatusType, Member
 from otypes import (
     CertificateType,
     Info,
@@ -14,8 +14,6 @@ from otypes import (
     SimpleClubInput,
     SimpleMemberInput,
 )
-
-from enums import CertificateStatusType
 
 """
 Member Queries

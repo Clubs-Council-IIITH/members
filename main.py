@@ -4,7 +4,6 @@ import strawberry
 from fastapi import FastAPI
 from strawberry.fastapi import GraphQLRouter
 from strawberry.tools import create_type
-from enums import CertificateStatusType
 
 # override PyObjectId and Context scalars
 from models import PyObjectId
