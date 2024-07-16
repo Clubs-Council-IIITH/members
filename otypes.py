@@ -65,9 +65,9 @@ class FullMemberInput:
     poc: Optional[bool] = strawberry.UNSET
 
 
-@strawberry.experimental.pydantic.type(model=Certificate, all_fields=True)
-class CertificateType:
-    pass
+@strawberry.input
+class CertificateInput:
+    request_reason: Optional[str] = None
 
 
 @strawberry.input
@@ -100,8 +100,3 @@ class MembershipInput:
     endYear: Optional[int]
     name: str
     cid: str
-
-@strawberry.input
-class CertificateInput:
-    request_reason: Optional[str] = None
-    memberships: List[MembershipInput]

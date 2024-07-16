@@ -36,7 +36,9 @@ def member(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     uid = user["uid"]
     member_input = jsonable_encoder(memberInput)
 
-    if (member_input["cid"] != uid or user["role"] != "club") and user["role"] != "cc":
+    if (member_input["cid"] != uid or user["role"] != "club") and user[
+        "role"
+    ] != "cc":
         raise Exception("Not Authenticated to access this API")
 
     member = membersdb.find_one(
@@ -140,7 +142,9 @@ def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
 
             if len(roles_result) > 0:
                 result["roles"] = roles_result
-                members.append(MemberType.from_pydantic(Member.parse_obj(result)))
+                members.append(
+                    MemberType.from_pydantic(Member.parse_obj(result))
+                )
 
         return members
 
@@ -190,7 +194,9 @@ def currentMembers(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
 
             if len(roles_result) > 0:
                 result["roles"] = roles_result
-                members.append(MemberType.from_pydantic(Member.parse_obj(result)))
+                members.append(
+                    MemberType.from_pydantic(Member.parse_obj(result))
+                )
 
         return members
     else:
@@ -224,7 +230,9 @@ def pendingMembers(info: Info) -> List[MemberType]:
 
             if len(roles_result) > 0:
                 result["roles"] = roles_result
-                members.append(MemberType.from_pydantic(Member.parse_obj(result)))
+                members.append(
+                    MemberType.from_pydantic(Member.parse_obj(result))
+                )
 
         return members
     else:
@@ -253,21 +261,23 @@ def getPendingCertificates(info: Info) -> List[CertificateType]:
     Input: None
     """
     user = info.context.user
-    if user is None or user["role"] not in ["cc", "slo"]:
+    if user is None:
         raise Exception("Not Authenticated")
 
-    pending_statuses = [
-        CertificateStatusType.PENDING_CC.value,
-        CertificateStatusType.PENDING_SLO.value,
-    ]
-    results = certificatesdb.find({"status": {"$in": pending_statuses}})
+    if user["role"] == "cc":
+        pending_statuses = [CertificateStatusType.PENDING_CC.value]
+    elif user["role"] == "slo":
+        pending_statuses = [CertificateStatusType.PENDING_SLO.value]
+    else:
+        raise Exception("You do not have permission to access this resource.")
+
+    results = certificatesdb.find({"status.state": {"$in": pending_statuses}})
 
     if results:
-        certificates = [
+        return [
             CertificateType.from_pydantic(Certificate.parse_obj(cert))
             for cert in results
         ]
-        return certificates
     else:
         return []
 
@@ -277,12 +287,11 @@ def verifyCertificate(certificate_number: str, key: str) -> CertificateType:
     certificate = certificatesdb.find_one(
         {
             "certificate_number": certificate_number,
-            "status": CertificateStatusType.APPROVED.value,
+            "status.state": CertificateStatusType.APPROVED.value,
         }
     )
-    print(certificate)
 
-    if not certificate or str(certificate['_id']) == key:
+    if not certificate or certificate["key"] != key:
         raise Exception("Invalid certificate or not approved")
 
     return CertificateType.from_pydantic(Certificate.parse_obj(certificate))

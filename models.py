@@ -13,6 +13,8 @@ from pydantic import (
 )
 from pydantic_core import core_schema
 
+from utils import get_ist_time
+
 
 # for handling mongo ObjectIds
 class PyObjectId(ObjectId):
@@ -43,6 +45,65 @@ class CertificateStatusType(Enum):
     PENDING_CC = "pending_cc"
     PENDING_SLO = "pending_slo"
     APPROVED = "approved"
+    REJECTED = "rejected"
+
+
+@strawberry.type
+class Certificate_Status:
+    state: CertificateStatusType = CertificateStatusType.PENDING_CC
+    requested_at: str = Field(default_factory=get_ist_time)
+
+    cc_approved_at: str | None = None
+    cc_approver: str | None = None
+
+    slo_approved_at: str | None = None
+    slo_approver: str | None = None
+
+    def __init__(
+        self,
+        state: CertificateStatusType = CertificateStatusType.PENDING_CC,
+        requested_at: str = get_ist_time(),
+        cc_approved_at: str | None = None,
+        cc_approver: str | None = None,
+        slo_approved_at: str | None = None,
+        slo_approver: str | None = None,
+    ) -> None:
+        self.state = state
+        self.requested_at = requested_at
+
+        self.cc_approved_at = cc_approved_at
+        self.cc_approver = cc_approver
+
+        self.slo_approved_at = slo_approved_at
+        self.slo_approver = slo_approver
+
+
+class Certificate(BaseModel):
+    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
+    user_id: str
+    certificate_number: str
+    status: Certificate_Status = Certificate_Status()
+    certificate_data: str  # Storing the rendered template
+    key: str
+    request_reason: str | None = None
+
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        str_strip_whitespace=True,
+        str_max_length=3000,
+        validate_assignment=True,
+        validate_default=True,
+        validate_return=True,
+        extra="forbid",
+        json_encoders={ObjectId: str},
+        populate_by_name=True,
+    )
+
+    @field_validator("status")
+    def validate_status(cls, v):
+        if v not in [e.value for e in CertificateStatusType]:
+            raise ValueError(f"Invalid status: {v}")
+        return v
 
 
 class Roles(BaseModel):
@@ -76,38 +137,6 @@ class Roles(BaseModel):
         extra="forbid",
         str_strip_whitespace=True,
     )
-
-
-class Certificate(BaseModel):
-    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
-    user_id: str
-    certificate_number: str
-    status: str = Field(
-        default=CertificateStatusType.PENDING_CC.value
-    )
-    requested_at: datetime = Field(default_factory=datetime.now)
-    approved_at: datetime | None = None
-    approver_id: str | None = None
-    certificate_data: str  # Storing the rendered template
-    request_reason: str | None = None
-
-    model_config = ConfigDict(
-        arbitrary_types_allowed=True,
-        str_strip_whitespace=True,
-        str_max_length=5000,
-        validate_assignment=True,
-        validate_default=True,
-        validate_return=True,
-        extra="forbid",
-        json_encoders={ObjectId: str},
-        populate_by_name=True,
-    )
-
-    @field_validator("status")
-    def validate_status(cls, v):
-        if v not in [e.value for e in CertificateStatusType]:
-            raise ValueError(f"Invalid status: {v}")
-        return v
 
 
 class Member(BaseModel):
