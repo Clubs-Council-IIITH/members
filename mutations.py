@@ -5,7 +5,7 @@ import strawberry
 from fastapi.encoders import jsonable_encoder
 
 from db import certificatesdb, membersdb
-from models import Certificate, CertificateStatusType, Member
+from models import Certificate, CertificateStates, Member
 from otypes import (
     CertificateInput,
     CertificateType,
@@ -14,7 +14,7 @@ from otypes import (
     MemberType,
     SimpleMemberInput,
 )
-from queries import memberRoles
+from queries import memberRolesHelper
 from utils import generate_key, getUser, non_deleted_members, unique_roles_id
 
 inter_communication_secret_global = getenv("INTER_COMMUNICATION_SECRET")
@@ -414,7 +414,7 @@ def requestCertificate(
     count = certificatesdb.count_documents({}) + 1
     certificate_number = f"SLC/{year_code}/{count:04d}"
 
-    user_memberships = memberRoles(user["uid"], info)
+    user_memberships = memberRolesHelper(user["uid"], info)
     if not user_memberships:
         raise Exception("No Memberships Found")
 
@@ -473,29 +473,29 @@ def approveCertificate(certificate_number: str, info: Info) -> CertificateType:
     if not certificate:
         raise noaccess_error
 
-    current_status = certificate["status.state"]
+    current_status = certificate["state"]
     updation = {}
 
     if (
-        current_status == CertificateStatusType.PENDING_CC.value
+        current_status == CertificateStates.pending_cc.value
         and user["role"] == "cc"
     ):
-        new_status = CertificateStatusType.PENDING_SLO.value
+        new_status = CertificateStates.pending_slo.value
         updation = {
             "$set": {
-                "status.state": new_status,
+                "state": new_status,
                 "status.cc_approved_at": datetime.now(),
                 "status.cc_approver": user["uid"],
             }
         }
     elif (
-        current_status == CertificateStatusType.PENDING_SLO.value
+        current_status == CertificateStates.pending_slo.value
         and user["role"] == "slo"
     ):
-        new_status = CertificateStatusType.APPROVED.value
+        new_status = CertificateStates.approved.value
         updation = {
             "$set": {
-                "status.state": new_status,
+                "state": new_status,
                 "status.slo_approved_at": datetime.now(),
                 "status.slo_approver": user["uid"],
             }
@@ -512,8 +512,9 @@ def approveCertificate(certificate_number: str, info: Info) -> CertificateType:
     )
     return CertificateType.from_pydantic(updated_certificate)
 
+
 @strawberry.mutation
-def rejectCertificate(certificate_number: str, info: Info):
+def rejectCertificate(certificate_number: str, info: Info) -> CertificateType:
     user = info.context.user
     if user is None or user["role"] not in ["cc", "slo"]:
         raise Exception("Not Authenticated or Unauthorized")
@@ -525,27 +526,27 @@ def rejectCertificate(certificate_number: str, info: Info):
     if not certificate:
         raise Exception("No such certificate found")
 
-    current_status = certificate["status.state"]
+    current_status = certificate["state"]
     updation = {}
 
     if (
-        current_status == CertificateStatusType.PENDING_CC.value
+        current_status == CertificateStates.pending_cc.value
         and user["role"] == "cc"
     ):
-        new_status = CertificateStatusType.REJECTED.value
+        new_status = CertificateStates.rejected.value
         updation = {
             "$set": {
-                "status.state": new_status,
+                "state": new_status,
             }
         }
     elif (
-        current_status == CertificateStatusType.PENDING_SLO.value
+        current_status == CertificateStates.pending_slo.value
         and user["role"] == "slo"
     ):
-        new_status = CertificateStatusType.REJECTED.value
+        new_status = CertificateStates.rejected.value
         updation = {
             "$set": {
-                "status.state": new_status,
+                "state": new_status,
             }
         }
     else:
@@ -555,7 +556,11 @@ def rejectCertificate(certificate_number: str, info: Info):
         {"certificate_number": certificate_number}, updation
     )
 
-    return {"status": "Success"}
+    updated_certificate = Certificate.parse_obj(
+        certificatesdb.find_one({"certificate_number": certificate_number})
+    )
+    return CertificateType.from_pydantic(updated_certificate)
+
 
 # register all mutations
 mutations = [

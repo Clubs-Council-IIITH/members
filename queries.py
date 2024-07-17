@@ -6,7 +6,7 @@ from fastapi.encoders import jsonable_encoder
 from db import certificatesdb, membersdb
 
 # import all models and types
-from models import Certificate, CertificateStatusType, Member
+from models import Certificate, CertificateStates, Member
 from otypes import (
     CertificateType,
     Info,
@@ -58,6 +58,10 @@ def member(memberInput: SimpleMemberInput, info: Info) -> MemberType:
 
 @strawberry.field
 def memberRoles(uid: str, info: Info) -> List[MemberType]:
+    return memberRolesHelper(uid, info)
+
+
+def memberRolesHelper(uid: str, info: Info) -> List[MemberType]:
     """
     Description:
         Returns member roles from each club
@@ -265,13 +269,13 @@ def getPendingCertificates(info: Info) -> List[CertificateType]:
         raise Exception("Not Authenticated")
 
     if user["role"] == "cc":
-        pending_statuses = [CertificateStatusType.PENDING_CC.value]
+        pending_statuses = [CertificateStates.pending_cc.value]
     elif user["role"] == "slo":
-        pending_statuses = [CertificateStatusType.PENDING_SLO.value]
+        pending_statuses = [CertificateStates.pending_slo.value]
     else:
         raise Exception("You do not have permission to access this resource.")
 
-    results = certificatesdb.find({"status.state": {"$in": pending_statuses}})
+    results = certificatesdb.find({"state": {"$in": pending_statuses}})
 
     if results:
         return [
@@ -287,7 +291,7 @@ def verifyCertificate(certificate_number: str, key: str) -> CertificateType:
     certificate = certificatesdb.find_one(
         {
             "certificate_number": certificate_number,
-            "status.state": CertificateStatusType.APPROVED.value,
+            "state": CertificateStates.approved.value,
         }
     )
 

@@ -1,12 +1,11 @@
 import json
 from functools import cached_property
-from typing import Dict, Optional, Union, List
+from typing import Dict, Optional, Union
 
 import strawberry
 from strawberry.fastapi import BaseContext
 from strawberry.types import Info as _Info
 from strawberry.types.info import RootValueType
-
 
 from models import Certificate, Member, PyObjectId, Roles
 

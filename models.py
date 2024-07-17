@@ -2,6 +2,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, List
 
+import pytz
 import strawberry
 from bson import ObjectId
 from pydantic import (
@@ -12,8 +13,6 @@ from pydantic import (
     field_validator,
 )
 from pydantic_core import core_schema
-
-from utils import get_ist_time
 
 
 # for handling mongo ObjectIds
@@ -40,17 +39,23 @@ class PyObjectId(ObjectId):
         field_schema.update(type="string")
 
 
+def get_ist_time():
+    """
+    Function to get the current time in IST
+    """
+    return datetime.now(pytz.timezone("Asia/Kolkata")).isoformat()
+
+
 @strawberry.enum
-class CertificateStatusType(Enum):
-    PENDING_CC = "pending_cc"
-    PENDING_SLO = "pending_slo"
-    APPROVED = "approved"
-    REJECTED = "rejected"
+class CertificateStates(Enum):
+    pending_cc = "pending_cc"
+    pending_slo = "pending_slo"
+    approved = "approved"
+    rejected = "rejected"
 
 
 @strawberry.type
 class Certificate_Status:
-    state: CertificateStatusType = CertificateStatusType.PENDING_CC
     requested_at: str = Field(default_factory=get_ist_time)
 
     cc_approved_at: str | None = None
@@ -61,14 +66,12 @@ class Certificate_Status:
 
     def __init__(
         self,
-        state: CertificateStatusType = CertificateStatusType.PENDING_CC,
         requested_at: str = get_ist_time(),
         cc_approved_at: str | None = None,
         cc_approver: str | None = None,
         slo_approved_at: str | None = None,
         slo_approver: str | None = None,
     ) -> None:
-        self.state = state
         self.requested_at = requested_at
 
         self.cc_approved_at = cc_approved_at
@@ -83,6 +86,7 @@ class Certificate(BaseModel):
     user_id: str
     certificate_number: str
     status: Certificate_Status = Certificate_Status()
+    state: CertificateStates = CertificateStates.pending_cc
     certificate_data: str  # Storing the rendered template
     key: str
     request_reason: str | None = None
@@ -98,12 +102,6 @@ class Certificate(BaseModel):
         json_encoders={ObjectId: str},
         populate_by_name=True,
     )
-
-    @field_validator("status")
-    def validate_status(cls, v):
-        if v not in [e.value for e in CertificateStatusType]:
-            raise ValueError(f"Invalid status: {v}")
-        return v
 
 
 class Roles(BaseModel):
