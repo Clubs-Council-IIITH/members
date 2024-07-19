@@ -87,7 +87,7 @@ class Certificate(BaseModel):
     certificate_number: str
     status: Certificate_Status = Certificate_Status()
     state: CertificateStates = CertificateStates.pending_cc
-    certificate_data: str  # Storing the rendered template
+    certificate_data: str
     key: str
     request_reason: str | None = None
 

@@ -36,9 +36,7 @@ def member(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     uid = user["uid"]
     member_input = jsonable_encoder(memberInput)
 
-    if (member_input["cid"] != uid or user["role"] != "club") and user[
-        "role"
-    ] != "cc":
+    if (member_input["cid"] != uid or user["role"] != "club") and user["role"] != "cc":
         raise Exception("Not Authenticated to access this API")
 
     member = membersdb.find_one(
@@ -146,9 +144,7 @@ def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
 
             if len(roles_result) > 0:
                 result["roles"] = roles_result
-                members.append(
-                    MemberType.from_pydantic(Member.parse_obj(result))
-                )
+                members.append(MemberType.from_pydantic(Member.parse_obj(result)))
 
         return members
 
@@ -198,9 +194,7 @@ def currentMembers(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
 
             if len(roles_result) > 0:
                 result["roles"] = roles_result
-                members.append(
-                    MemberType.from_pydantic(Member.parse_obj(result))
-                )
+                members.append(MemberType.from_pydantic(Member.parse_obj(result)))
 
         return members
     else:
@@ -234,9 +228,7 @@ def pendingMembers(info: Info) -> List[MemberType]:
 
             if len(roles_result) > 0:
                 result["roles"] = roles_result
-                members.append(
-                    MemberType.from_pydantic(Member.parse_obj(result))
-                )
+                members.append(MemberType.from_pydantic(Member.parse_obj(result)))
 
         return members
     else:
@@ -288,15 +280,19 @@ def getPendingCertificates(info: Info) -> List[CertificateType]:
 
 @strawberry.field
 def verifyCertificate(certificate_number: str, key: str) -> CertificateType:
-    certificate = certificatesdb.find_one(
-        {
-            "certificate_number": certificate_number,
-            "state": CertificateStates.approved.value,
-        }
-    )
+    certificate = certificatesdb.find_one({"certificate_number": certificate_number})
 
-    if not certificate or certificate["key"] != key:
-        raise Exception("Invalid certificate or not approved")
+    if not certificate:
+        raise Exception("Certificate not found")
+
+    if certificate["state"] == CertificateStates.rejected.value:
+        raise Exception("Certificate has been rejected")
+
+    if certificate["key"] != key:
+        raise Exception("Wrong key provided")
+
+    if certificate["state"] != CertificateStates.approved.value:
+        raise Exception("Certificate approval is pending")
 
     return CertificateType.from_pydantic(Certificate.parse_obj(certificate))
 
