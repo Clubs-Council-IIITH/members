@@ -1,3 +1,4 @@
+import math
 from typing import List
 
 import strawberry
@@ -13,6 +14,7 @@ from otypes import (
     MemberType,
     SimpleClubInput,
     SimpleMemberInput,
+    PaginatedCertificatesType,
 )
 
 """
@@ -307,6 +309,36 @@ def getCertificateByNumber(info: Info, certificate_number: str) -> CertificateTy
     return CertificateType.from_pydantic(Certificate.parse_obj(certificate))
 
 
+@strawberry.field
+def getAllCertificates(
+    info: Info, page: int = 1, page_size: int = 10
+) -> PaginatedCertificatesType:
+    page = max(1, page)
+    page_size = max(1, min(100, page_size))  # Limit page_size to a reasonable range
+
+    # Calculate skip and limit for pagination
+    skip = (page - 1) * page_size
+
+    # Fetch total count
+    total_count = certificatesdb.count_documents({})
+
+    # Fetch certificates for the current page
+    certificates = list(certificatesdb.find().skip(skip).limit(page_size))
+
+    # Calculate total pages
+    total_pages = math.ceil(total_count / page_size)
+
+    # Convert certificates to CertificateType
+    certificate_types = [
+        CertificateType.from_pydantic(Certificate.parse_obj(cert))
+        for cert in certificates
+    ]
+
+    return PaginatedCertificatesType(
+        certificates=certificate_types, total_count=total_count, total_pages=total_pages
+    )
+
+
 # register all queries
 queries = [
     member,
@@ -318,4 +350,5 @@ queries = [
     getPendingCertificates,
     verifyCertificate,
     getCertificateByNumber,
+    getAllCertificates,
 ]
