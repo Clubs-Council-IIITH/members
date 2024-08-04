@@ -297,6 +297,16 @@ def verifyCertificate(certificate_number: str, key: str) -> CertificateType:
     return CertificateType.from_pydantic(Certificate.parse_obj(certificate))
 
 
+@strawberry.field
+def getCertificateByNumber(info: Info, certificate_number: str) -> CertificateType:
+    certificate = certificatesdb.find_one({"certificate_number": certificate_number})
+
+    if not certificate:
+        raise Exception("Certificate not found")
+
+    return CertificateType.from_pydantic(Certificate.parse_obj(certificate))
+
+
 # register all queries
 queries = [
     member,
@@ -307,4 +317,5 @@ queries = [
     getUserCertificates,
     getPendingCertificates,
     verifyCertificate,
+    getCertificateByNumber,
 ]
