@@ -1,5 +1,9 @@
+from datetime import datetime
+from enum import Enum
 from typing import Any, List
 
+import pytz
+import strawberry
 from bson import ObjectId
 from pydantic import (
     BaseModel,
@@ -33,6 +37,71 @@ class PyObjectId(ObjectId):
     @classmethod
     def __get_pydantic_json_schema__(cls, field_schema):
         field_schema.update(type="string")
+
+
+def get_ist_time():
+    """
+    Function to get the current time in IST
+    """
+    return datetime.now(pytz.timezone("Asia/Kolkata")).isoformat()
+
+
+@strawberry.enum
+class CertificateStates(Enum):
+    pending_cc = "pending_cc"
+    pending_slo = "pending_slo"
+    approved = "approved"
+    rejected = "rejected"
+
+
+@strawberry.type
+class Certificate_Status:
+    requested_at: str = Field(default_factory=get_ist_time)
+
+    cc_approved_at: str | None = None
+    cc_approver: str | None = None
+
+    slo_approved_at: str | None = None
+    slo_approver: str | None = None
+
+    def __init__(
+        self,
+        requested_at: str = get_ist_time(),
+        cc_approved_at: str | None = None,
+        cc_approver: str | None = None,
+        slo_approved_at: str | None = None,
+        slo_approver: str | None = None,
+    ) -> None:
+        self.requested_at = requested_at
+
+        self.cc_approved_at = cc_approved_at
+        self.cc_approver = cc_approver
+
+        self.slo_approved_at = slo_approved_at
+        self.slo_approver = slo_approver
+
+
+class Certificate(BaseModel):
+    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
+    user_id: str
+    certificate_number: str
+    status: Certificate_Status = Certificate_Status()
+    state: CertificateStates = CertificateStates.pending_cc
+    certificate_data: str
+    key: str
+    request_reason: str | None = None
+
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        str_strip_whitespace=True,
+        str_max_length=3000,
+        validate_assignment=True,
+        validate_default=True,
+        validate_return=True,
+        extra="forbid",
+        json_encoders={ObjectId: str},
+        populate_by_name=True,
+    )
 
 
 class Roles(BaseModel):
@@ -77,6 +146,7 @@ class Member(BaseModel):
     )
 
     poc: bool = Field(default_factory=(lambda: 0 == 1), description="Club POC")
+    certificates: List[Certificate] = Field(default_factory=list)
 
     @field_validator("uid", mode="before")
     @classmethod

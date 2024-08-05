@@ -1,14 +1,25 @@
-import os
 from datetime import datetime
 
+import pytz
 import requests
+from shortuuid import ShortUUID
 
 from db import membersdb
 from models import Member
 from otypes import MemberType
 
-inter_communication_secret = os.getenv("INTER_COMMUNICATION_SECRET")
 
+def get_ist_time():
+    """
+    Function to get the current time in IST
+    """
+    return datetime.now(pytz.timezone("Asia/Kolkata")).isoformat()
+
+def generate_key(length=8):
+    """
+    Function to generate a unique key
+    """
+    return ShortUUID().random(length=length)
 
 def non_deleted_members(member_input) -> MemberType:
     """

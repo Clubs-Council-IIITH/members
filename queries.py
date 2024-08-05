@@ -1,13 +1,21 @@
+import math
 from typing import List
 
 import strawberry
 from fastapi.encoders import jsonable_encoder
 
-from db import membersdb
-from models import Member
+from db import certificatesdb, membersdb
 
 # import all models and types
-from otypes import Info, MemberType, SimpleClubInput, SimpleMemberInput
+from models import Certificate, CertificateStates, Member
+from otypes import (
+    CertificateType,
+    Info,
+    MemberType,
+    SimpleClubInput,
+    SimpleMemberInput,
+    PaginatedCertificatesType,
+)
 
 """
 Member Queries
@@ -52,6 +60,10 @@ def member(memberInput: SimpleMemberInput, info: Info) -> MemberType:
 
 @strawberry.field
 def memberRoles(uid: str, info: Info) -> List[MemberType]:
+    return memberRolesHelper(uid, info)
+
+
+def memberRolesHelper(uid: str, info: Info) -> List[MemberType]:
     """
     Description:
         Returns member roles from each club
@@ -233,6 +245,126 @@ def pendingMembers(info: Info) -> List[MemberType]:
         raise Exception("No Member Result/s Found")
 
 
+@strawberry.field
+def getUserCertificates(info: Info) -> List[CertificateType]:
+    user = info.context.user
+    if user is None:
+        raise Exception("Not Authenticated")
+
+    certificates = certificatesdb.find({"user_id": user["uid"]})
+    return [
+        CertificateType.from_pydantic(Certificate.parse_obj(cert))
+        for cert in certificates
+    ]
+
+
+@strawberry.field
+def getPendingCertificates(info: Info) -> List[CertificateType]:
+    """
+    Description: Returns all pending certificates for CC and SLO roles.
+    Scope: CC, SLO
+    Return Type: List[CertificateType]
+    Input: None
+    """
+    user = info.context.user
+    if user is None:
+        raise Exception("Not Authenticated")
+
+    if user["role"] == "cc":
+        pending_statuses = [CertificateStates.pending_cc.value]
+    elif user["role"] == "slo":
+        pending_statuses = [CertificateStates.pending_slo.value]
+    else:
+        raise Exception("You do not have permission to access this resource.")
+
+    results = certificatesdb.find({"state": {"$in": pending_statuses}})
+
+    if results:
+        return [
+            CertificateType.from_pydantic(Certificate.parse_obj(cert))
+            for cert in results
+        ]
+    else:
+        return []
+
+
+@strawberry.field
+def verifyCertificate(certificate_number: str, key: str) -> CertificateType:
+    certificate = certificatesdb.find_one(
+        {"certificate_number": certificate_number}
+    )
+
+    if not certificate:
+        raise Exception("Certificate not found")
+
+    if certificate["state"] == CertificateStates.rejected.value:
+        raise Exception("Certificate has been rejected")
+
+    if certificate["key"] != key:
+        raise Exception("Wrong key provided")
+
+    if certificate["state"] != CertificateStates.approved.value:
+        raise Exception("Certificate approval is pending")
+
+    return CertificateType.from_pydantic(Certificate.parse_obj(certificate))
+
+
+@strawberry.field
+def getCertificateByNumber(
+    info: Info, certificate_number: str
+) -> CertificateType:
+    user = info.context.user
+    if user is None:
+        raise Exception("Not Authenticated")
+    role = user["role"]
+
+    certificate = certificatesdb.find_one(
+        {"certificate_number": certificate_number}
+    )
+    if not certificate:
+        raise Exception("Certificate not found")
+
+    if (
+        role not in ["cc", "slo"]
+        and certificate["state"] != CertificateStates.approved.value
+    ):
+        raise Exception("You do not have permission to access this resource.")
+
+    return CertificateType.from_pydantic(Certificate.parse_obj(certificate))
+
+
+@strawberry.field
+def getAllCertificates(
+    info: Info, page: int = 1, page_size: int = 10
+) -> PaginatedCertificatesType:
+    user = info.context.user
+    if user is None:
+        raise Exception("Not Authenticated")
+
+    if user["role"] not in ["cc", "slo"]:
+        raise Exception("You do not have permission to access this resource.")
+
+    page = max(1, page)
+    page_size = max(1, min(100, page_size))
+
+    skip = (page - 1) * page_size
+    total_count = certificatesdb.count_documents({})
+    total_pages = math.ceil(total_count / page_size)
+
+    certificates = list(certificatesdb.find().skip(skip).limit(page_size))    
+
+    certificate_types = [
+        CertificateType.from_pydantic(Certificate.parse_obj(cert))
+        for cert in certificates
+    ]
+
+    return PaginatedCertificatesType(
+        certificates=certificate_types,
+        total_count=total_count,
+        total_pages=total_pages,
+    )
+
+
 # register all queries
 queries = [
     member,
@@ -240,4 +372,9 @@ queries = [
     members,
     currentMembers,
     pendingMembers,
+    getUserCertificates,
+    getPendingCertificates,
+    verifyCertificate,
+    getCertificateByNumber,
+    getAllCertificates,
 ]
