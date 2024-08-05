@@ -38,7 +38,9 @@ def member(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     uid = user["uid"]
     member_input = jsonable_encoder(memberInput)
 
-    if (member_input["cid"] != uid or user["role"] != "club") and user["role"] != "cc":
+    if (member_input["cid"] != uid or user["role"] != "club") and user[
+        "role"
+    ] != "cc":
         raise Exception("Not Authenticated to access this API")
 
     member = membersdb.find_one(
@@ -146,7 +148,9 @@ def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
 
             if len(roles_result) > 0:
                 result["roles"] = roles_result
-                members.append(MemberType.from_pydantic(Member.parse_obj(result)))
+                members.append(
+                    MemberType.from_pydantic(Member.parse_obj(result))
+                )
 
         return members
 
@@ -196,7 +200,9 @@ def currentMembers(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
 
             if len(roles_result) > 0:
                 result["roles"] = roles_result
-                members.append(MemberType.from_pydantic(Member.parse_obj(result)))
+                members.append(
+                    MemberType.from_pydantic(Member.parse_obj(result))
+                )
 
         return members
     else:
@@ -230,7 +236,9 @@ def pendingMembers(info: Info) -> List[MemberType]:
 
             if len(roles_result) > 0:
                 result["roles"] = roles_result
-                members.append(MemberType.from_pydantic(Member.parse_obj(result)))
+                members.append(
+                    MemberType.from_pydantic(Member.parse_obj(result))
+                )
 
         return members
     else:
@@ -282,7 +290,9 @@ def getPendingCertificates(info: Info) -> List[CertificateType]:
 
 @strawberry.field
 def verifyCertificate(certificate_number: str, key: str) -> CertificateType:
-    certificate = certificatesdb.find_one({"certificate_number": certificate_number})
+    certificate = certificatesdb.find_one(
+        {"certificate_number": certificate_number}
+    )
 
     if not certificate:
         raise Exception("Certificate not found")
@@ -300,11 +310,25 @@ def verifyCertificate(certificate_number: str, key: str) -> CertificateType:
 
 
 @strawberry.field
-def getCertificateByNumber(info: Info, certificate_number: str) -> CertificateType:
-    certificate = certificatesdb.find_one({"certificate_number": certificate_number})
+def getCertificateByNumber(
+    info: Info, certificate_number: str
+) -> CertificateType:
+    user = info.context.user
+    if user is None:
+        raise Exception("Not Authenticated")
+    role = user["role"]
 
+    certificate = certificatesdb.find_one(
+        {"certificate_number": certificate_number}
+    )
     if not certificate:
         raise Exception("Certificate not found")
+
+    if (
+        role not in ["cc", "slo"]
+        and certificate["state"] != CertificateStates.approved.value
+    ):
+        raise Exception("You do not have permission to access this resource.")
 
     return CertificateType.from_pydantic(Certificate.parse_obj(certificate))
 
@@ -313,29 +337,31 @@ def getCertificateByNumber(info: Info, certificate_number: str) -> CertificateTy
 def getAllCertificates(
     info: Info, page: int = 1, page_size: int = 10
 ) -> PaginatedCertificatesType:
+    user = info.context.user
+    if user is None:
+        raise Exception("Not Authenticated")
+
+    if user["role"] not in ["cc", "slo"]:
+        raise Exception("You do not have permission to access this resource.")
+
     page = max(1, page)
-    page_size = max(1, min(100, page_size))  # Limit page_size to a reasonable range
+    page_size = max(1, min(100, page_size))
 
-    # Calculate skip and limit for pagination
     skip = (page - 1) * page_size
-
-    # Fetch total count
     total_count = certificatesdb.count_documents({})
-
-    # Fetch certificates for the current page
-    certificates = list(certificatesdb.find().skip(skip).limit(page_size))
-
-    # Calculate total pages
     total_pages = math.ceil(total_count / page_size)
 
-    # Convert certificates to CertificateType
+    certificates = list(certificatesdb.find().skip(skip).limit(page_size))    
+
     certificate_types = [
         CertificateType.from_pydantic(Certificate.parse_obj(cert))
         for cert in certificates
     ]
 
     return PaginatedCertificatesType(
-        certificates=certificate_types, total_count=total_count, total_pages=total_pages
+        certificates=certificate_types,
+        total_count=total_count,
+        total_pages=total_pages,
     )
 
 
