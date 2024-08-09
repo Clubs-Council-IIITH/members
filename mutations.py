@@ -1,5 +1,6 @@
 from datetime import datetime
 from os import getenv
+import pytz
 
 import strawberry
 from fastapi.encoders import jsonable_encoder
@@ -145,8 +146,13 @@ def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
                 member_roles.remove(i)
                 break
 
-        if not found_existing_role:
-            role_new["approved"] = user["role"] == "cc"
+        ist = pytz.timezone('Asia/Kolkata')
+        current_time = datetime.now(ist)
+        time_str = current_time.strftime("%d-%m-%Y %I:%M %p")
+
+        if not found_existing_role and user["role"] == "cc":
+            role_new["approved"] = True
+            role_new["approval_time"] = time_str
         roles.append(role_new)
 
     # DB STUFF
@@ -257,10 +263,15 @@ def approveMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     # if "rid" not in member_input:
     #     raise Exception("rid is required")
 
+    ist = pytz.timezone('Asia/Kolkata')
+    current_time = datetime.now(ist)
+    time_str = current_time.strftime("%d-%m-%Y %I:%M %p")
+
     roles = []
     for i in existing_data["roles"]:
         if not member_input["rid"] or i["rid"] == member_input["rid"]:
             i["approved"] = True
+            i["approval_time"] = time_str 
             i["rejected"] = False
         roles.append(i)
 
@@ -309,10 +320,15 @@ def rejectMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     # if "rid" not in member_input:
     #     raise Exception("rid is required")
 
+    ist = pytz.timezone('Asia/Kolkata')
+    current_time = datetime.now(ist)
+    time_str = current_time.strftime("%d-%m-%Y %I:%M %p")
+
     roles = []
     for i in existing_data["roles"]:
         if not member_input["rid"] or i["rid"] == member_input["rid"]:
             i["approved"] = False
+            i["rejection_time"] = time_str 
             i["rejected"] = True
         roles.append(i)
 

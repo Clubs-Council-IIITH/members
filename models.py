@@ -41,7 +41,9 @@ class Roles(BaseModel):
     start_year: int = Field(..., ge=2010, le=2050)
     end_year: int | None = Field(None, gt=2010, le=2051)
     approved: bool = False
+    approval_time: str = "Not Approved"
     rejected: bool = False
+    rejection_time: str = "Not Rejected"
     deleted: bool = False
 
     # Validators
