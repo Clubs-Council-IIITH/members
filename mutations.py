@@ -1,7 +1,7 @@
 from datetime import datetime
 from os import getenv
-import pytz
 
+import pytz
 import strawberry
 from fastapi.encoders import jsonable_encoder
 
@@ -13,7 +13,7 @@ from otypes import FullMemberInput, Info, MemberType, SimpleMemberInput
 from utils import getUser, non_deleted_members, unique_roles_id
 
 inter_communication_secret_global = getenv("INTER_COMMUNICATION_SECRET")
-
+ist = pytz.timezone('Asia/Kolkata')
 
 @strawberry.mutation
 def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
@@ -62,9 +62,8 @@ def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
             role["end_year"] = None
         roles0.append(role)
 
-    ist = pytz.timezone('Asia/Kolkata')
     current_time = datetime.now(ist)
-    time_str = current_time.strftime("%d-%m-%Y %I:%M %p")
+    time_str = current_time.strftime("%d-%m-%Y %I:%M %p IST")
 
     roles = []
     for role in roles0:
@@ -130,9 +129,8 @@ def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
 
     member_roles = member_ref.roles
 
-    ist = pytz.timezone('Asia/Kolkata')
     current_time = datetime.now(ist)
-    time_str = current_time.strftime("%d-%m-%Y %I:%M %p")
+    time_str = current_time.strftime("%d-%m-%Y %I:%M %p IST")
 
     # change last edited time
     member_input["last_edited_time"] = time_str
@@ -277,9 +275,8 @@ def approveMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     # if "rid" not in member_input:
     #     raise Exception("rid is required")
 
-    ist = pytz.timezone('Asia/Kolkata')
     current_time = datetime.now(ist)
-    time_str = current_time.strftime("%d-%m-%Y %I:%M %p")
+    time_str = current_time.strftime("%d-%m-%Y %I:%M %p IST")
 
     roles = []
     for i in existing_data["roles"]:
@@ -334,9 +331,8 @@ def rejectMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     # if "rid" not in member_input:
     #     raise Exception("rid is required")
 
-    ist = pytz.timezone('Asia/Kolkata')
     current_time = datetime.now(ist)
-    time_str = current_time.strftime("%d-%m-%Y %I:%M %p")
+    time_str = current_time.strftime("%d-%m-%Y %I:%M %p IST")
 
     roles = []
     for i in existing_data["roles"]:
