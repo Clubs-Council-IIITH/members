@@ -62,12 +62,22 @@ def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
             role["end_year"] = None
         roles0.append(role)
 
+    ist = pytz.timezone('Asia/Kolkata')
+    current_time = datetime.now(ist)
+    time_str = current_time.strftime("%d-%m-%Y %I:%M %p")
+
     roles = []
     for role in roles0:
-        role["approved"] = user["role"] == "cc"
+        if user["role"] == "cc":
+            role["approved"] = True
+            role["approval_time"] = time_str
         roles.append(role)
 
     member_input["roles"] = roles
+
+    # add creation time of the user
+    member_input["creation_time"] = time_str
+    member_input["last_edited_time"] = time_str
 
     # DB STUFF
     created_id = membersdb.insert_one(member_input).inserted_id
@@ -120,6 +130,13 @@ def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
 
     member_roles = member_ref.roles
 
+    ist = pytz.timezone('Asia/Kolkata')
+    current_time = datetime.now(ist)
+    time_str = current_time.strftime("%d-%m-%Y %I:%M %p")
+
+    # change last edited time
+    member_input["last_edited_time"] = time_str
+
     roles = []
     for role in member_input["roles"]:
         if role["start_year"] > datetime.now().year:
@@ -146,9 +163,6 @@ def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
                 member_roles.remove(i)
                 break
 
-        ist = pytz.timezone('Asia/Kolkata')
-        current_time = datetime.now(ist)
-        time_str = current_time.strftime("%d-%m-%Y %I:%M %p")
 
         if not found_existing_role and user["role"] == "cc":
             role_new["approved"] = True

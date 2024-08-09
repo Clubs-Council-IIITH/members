@@ -74,6 +74,8 @@ class Member(BaseModel):
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     cid: str = Field(..., description="Club ID")
     uid: str = Field(..., description="User ID")
+    creation_time: str = ""
+    last_edited_time: str = ""
     roles: List[Roles] = Field(
         ..., description="List of Roles for that specific person"
     )

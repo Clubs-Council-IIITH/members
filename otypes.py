@@ -45,7 +45,8 @@ class RolesType:
 
 
 @strawberry.experimental.pydantic.type(
-    model=Member, fields=["id", "cid", "uid", "roles", "poc"]
+    model=Member, fields=["id", "cid", "uid", "roles", "poc", "creation_time",
+                          "last_edited_time"]
 )
 class MemberType:
     pass
