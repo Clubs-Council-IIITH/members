@@ -1,6 +1,7 @@
 from datetime import datetime
 from os import getenv
 
+import pytz
 import strawberry
 from fastapi.encoders import jsonable_encoder
 
@@ -12,6 +13,7 @@ from otypes import FullMemberInput, Info, MemberType, SimpleMemberInput
 from utils import getUser, non_deleted_members, unique_roles_id
 
 inter_communication_secret_global = getenv("INTER_COMMUNICATION_SECRET")
+ist = pytz.timezone("Asia/Kolkata")
 
 
 @strawberry.mutation
@@ -61,12 +63,21 @@ def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
             role["end_year"] = None
         roles0.append(role)
 
+    current_time = datetime.now(ist)
+    time_str = current_time.strftime("%d-%m-%Y %I:%M %p IST")
+
     roles = []
     for role in roles0:
-        role["approved"] = user["role"] == "cc"
+        if user["role"] == "cc":
+            role["approved"] = True
+            role["approval_time"] = time_str
         roles.append(role)
 
     member_input["roles"] = roles
+
+    # add creation time of the user
+    member_input["creation_time"] = time_str
+    member_input["last_edited_time"] = time_str
 
     # DB STUFF
     created_id = membersdb.insert_one(member_input).inserted_id
@@ -119,6 +130,9 @@ def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
 
     member_roles = member_ref.roles
 
+    current_time = datetime.now(ist)
+    time_str = current_time.strftime("%d-%m-%Y %I:%M %p IST")
+
     roles = []
     for role in member_input["roles"]:
         if role["start_year"] > datetime.now().year:
@@ -147,6 +161,10 @@ def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
 
         if not found_existing_role:
             role_new["approved"] = user["role"] == "cc"
+            role_new["approval_time"] = (
+                time_str if user["role"] == "cc" else None
+            )
+            role_new["rejection_time"] = None
         roles.append(role_new)
 
     # DB STUFF
@@ -157,7 +175,13 @@ def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
                 {"uid": member_input["uid"]},
             ]
         },
-        {"$set": {"roles": roles, "poc": member_input["poc"]}},
+        {
+            "$set": {
+                "roles": roles,
+                "poc": member_input["poc"],
+                "last_edited_time": time_str,
+            }
+        },
     )
 
     unique_roles_id(member_input["uid"], member_input["cid"])
@@ -257,11 +281,16 @@ def approveMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     # if "rid" not in member_input:
     #     raise Exception("rid is required")
 
+    current_time = datetime.now(ist)
+    time_str = current_time.strftime("%d-%m-%Y %I:%M %p IST")
+
     roles = []
     for i in existing_data["roles"]:
         if not member_input["rid"] or i["rid"] == member_input["rid"]:
             i["approved"] = True
+            i["approval_time"] = time_str
             i["rejected"] = False
+            i["rejection_time"] = None
         roles.append(i)
 
     # DB STUFF
@@ -309,10 +338,15 @@ def rejectMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     # if "rid" not in member_input:
     #     raise Exception("rid is required")
 
+    current_time = datetime.now(ist)
+    time_str = current_time.strftime("%d-%m-%Y %I:%M %p IST")
+
     roles = []
     for i in existing_data["roles"]:
         if not member_input["rid"] or i["rid"] == member_input["rid"]:
             i["approved"] = False
+            i["approval_time"] = None
+            i["rejection_time"] = time_str
             i["rejected"] = True
         roles.append(i)
 

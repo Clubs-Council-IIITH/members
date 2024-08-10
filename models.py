@@ -41,7 +41,9 @@ class Roles(BaseModel):
     start_year: int = Field(..., ge=2010, le=2050)
     end_year: int | None = Field(None, gt=2010, le=2051)
     approved: bool = False
+    approval_time: str | None = None
     rejected: bool = False
+    rejection_time: str | None = None
     deleted: bool = False
 
     # Validators
@@ -72,6 +74,8 @@ class Member(BaseModel):
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     cid: str = Field(..., description="Club ID")
     uid: str = Field(..., description="User ID")
+    creation_time: str | None = None
+    last_edited_time: str | None = None
     roles: List[Roles] = Field(
         ..., description="List of Roles for that specific person"
     )
