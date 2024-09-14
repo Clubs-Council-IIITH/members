@@ -13,9 +13,6 @@ from otypes import Context, PyObjectIdType
 # import all queries and mutations
 from queries import queries
 
-# check whether running in debug mode
-DEBUG = int(getenv("GLOBAL_DEBUG", 0))
-
 # create query types
 Query = create_type("Query", queries)
 
@@ -36,7 +33,8 @@ schema = strawberry.federation.Schema(
     scalar_overrides={PyObjectId: PyObjectIdType},
 )
 
-DEBUG = getenv("SERVICES_DEBUG", "False").lower() in ("true", "1", "t")
+# check whether running in debug mode
+DEBUG = getenv("GLOBAL_DEBUG", "False").lower() in ("true", "1", "t")
 
 # serve API with FastAPI router
 gql_app = GraphQLRouter(schema, graphiql=True, context_getter=get_context)
