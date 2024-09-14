@@ -47,7 +47,7 @@ def member(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     if member is None:
         raise Exception("No such Record")
 
-    return MemberType.from_pydantic(Member.parse_obj(member))
+    return MemberType.from_pydantic(Member.model_validate(member))
 
 
 @strawberry.field
@@ -85,7 +85,9 @@ def memberRoles(uid: str, info: Info) -> List[MemberType]:
 
         if len(roles_result) > 0:
             result["roles"] = roles_result
-            members.append(MemberType.from_pydantic(Member.parse_obj(result)))
+            members.append(
+                MemberType.from_pydantic(Member.model_validate(result))
+            )
 
     return members
 
@@ -137,7 +139,7 @@ def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
             if len(roles_result) > 0:
                 result["roles"] = roles_result
                 members.append(
-                    MemberType.from_pydantic(Member.parse_obj(result))
+                    MemberType.from_pydantic(Member.model_validate(result))
                 )
 
         return members
@@ -189,7 +191,7 @@ def currentMembers(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
             if len(roles_result) > 0:
                 result["roles"] = roles_result
                 members.append(
-                    MemberType.from_pydantic(Member.parse_obj(result))
+                    MemberType.from_pydantic(Member.model_validate(result))
                 )
 
         return members
@@ -225,7 +227,7 @@ def pendingMembers(info: Info) -> List[MemberType]:
             if len(roles_result) > 0:
                 result["roles"] = roles_result
                 members.append(
-                    MemberType.from_pydantic(Member.parse_obj(result))
+                    MemberType.from_pydantic(Member.model_validate(result))
                 )
 
         return members

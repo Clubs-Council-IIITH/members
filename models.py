@@ -87,8 +87,6 @@ class Member(BaseModel):
     def transform_uid(cls, v):
         return v.lower()
 
-    # TODO[pydantic]: The following keys were removed: `json_encoders`.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.  # noqa: E501
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
         str_strip_whitespace=True,
@@ -97,7 +95,6 @@ class Member(BaseModel):
         validate_default=True,
         validate_return=True,
         extra="forbid",
-        json_encoders={ObjectId: str},
         populate_by_name=True,
     )
 

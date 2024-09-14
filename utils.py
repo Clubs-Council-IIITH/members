@@ -35,7 +35,7 @@ def non_deleted_members(member_input) -> MemberType:
         roles.append(i)
     updated_sample["roles"] = roles
 
-    return MemberType.from_pydantic(Member.parse_obj(updated_sample))
+    return MemberType.from_pydantic(Member.model_validate(updated_sample))
 
 
 def unique_roles_id(uid, cid):

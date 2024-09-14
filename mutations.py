@@ -83,7 +83,7 @@ def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     created_id = membersdb.insert_one(member_input).inserted_id
     unique_roles_id(member_input["uid"], member_input["cid"])
 
-    created_sample = Member.parse_obj(
+    created_sample = Member.model_validate(
         membersdb.find_one({"_id": created_id}, {"_id": 0})
     )
 
@@ -126,7 +126,7 @@ def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     if member_ref is None:
         raise Exception("No such Record!")
     else:
-        member_ref = Member.parse_obj(member_ref)
+        member_ref = Member.model_validate(member_ref)
 
     member_roles = member_ref.roles
 
@@ -228,7 +228,7 @@ def deleteMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
             }
         )
 
-        return MemberType.from_pydantic(Member.parse_obj(existing_data))
+        return MemberType.from_pydantic(Member.model_validate(existing_data))
 
     roles = []
     for i in existing_data["roles"]:
@@ -392,7 +392,7 @@ def rejectMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
 #         {"$set": {"end_year": datetime.now().year}},
 #     )
 
-#     created_sample = Member.parse_obj(membersdb.find_one(
+#     created_sample = Member.model_validate(membersdb.find_one(
 # {"_id": created_id}))
 #     return MemberType.from_pydantic(created_sample)
 
