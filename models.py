@@ -198,6 +198,3 @@ class Member(BaseModel):
 
     # Separate Coordinator & other members roles option in frontend,
     # for better filtering for all_members_query
-
-
-# TODO: ADD Descriptions for non-direct fields
