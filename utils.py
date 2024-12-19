@@ -110,3 +110,30 @@ def getUser(uid, cookies=None):
         return request.json()["data"]["userProfile"]
     except Exception:
         return None
+
+# get club name from club id
+def getClubDetails(
+    clubid: str,
+    cookies,
+) -> dict:
+    try:
+        query = """
+                    query Club($clubInput: SimpleClubInput!) {
+                        club(clubInput: $clubInput) {
+                            cid
+                            name
+                            email
+                            studentBody
+                            category
+                        }
+                    }
+                """
+        variable = {"clubInput": {"cid": clubid}}
+        request = requests.post(
+            "http://gateway/graphql",
+            json={"query": query, "variables": variable},
+            cookies=cookies,
+        )
+        return request.json()["data"]["club"]
+    except Exception:
+        return {}
