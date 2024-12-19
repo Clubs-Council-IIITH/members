@@ -1,3 +1,5 @@
+import csv
+import io
 from typing import List
 
 import strawberry
@@ -5,9 +7,10 @@ from fastapi.encoders import jsonable_encoder
 
 from db import membersdb
 from models import Member
+from utils import getClubDetails, getUser
 
 # import all models and types
-from otypes import Info, MemberType, SimpleClubInput, SimpleMemberInput
+from otypes import Info, MemberType, SimpleClubInput, SimpleMemberInput, MemberInputDataReportDetails, MemberCSVResponse
 
 """
 Member Queries
@@ -234,6 +237,71 @@ def pendingMembers(info: Info) -> List[MemberType]:
     else:
         raise Exception("No Member Result/s Found")
 
+@strawberry.field
+def downloadMembersData(details: MemberInputDataReportDetails, info: Info) -> MemberCSVResponse:
+    user = info.context.user
+    if user is None:
+        raise Exception("You do not have permission to access this resource.")
+
+    results = membersdb.find({"cid": details.clubid}, {"_id": 0})
+
+    allMembers = []
+    for result in results:
+        roles = result["roles"]
+        roles_result = []
+
+        for i in roles:
+            if i["deleted"] is True:
+                continue
+            roles_result.append(i)
+
+        if len(roles_result) > 0:
+            result["roles"] = roles_result
+            allMembers.append(
+                result
+            )
+
+    headerMapping = {"clubid": "Club Name", "uid": "Name", "poc": "Is POC", "roles": "Roles"}
+
+    # Prepare CSV content
+    csvOutput = io.StringIO()
+    fieldnames = [
+        headerMapping.get(field.lower(), field)
+        for field in details.fields
+    ]
+    csv_writer = csv.DictWriter(csvOutput, fieldnames=fieldnames)
+    csv_writer.writeheader()
+    clubName = getClubDetails(details.clubid, info.context.cookies)["name"]
+
+    for member in allMembers:
+        memberData = {}
+        for field in details.fields:
+            value = ""
+            mappedField = headerMapping.get(field.lower())
+            if field == "clubid":
+                value = clubName
+            elif field == "uid":
+                userDetails = getUser(member[field], info.context.cookies)
+                value = userDetails["firstName"] + " " +userDetails["lastName"]
+            elif field == "roles":
+                listOfRoles = []
+                for i in member[field]:
+                    roleFormatting = [i["name"], i["start_year"], i["end_year"]]
+                    listOfRoles.append(roleFormatting)
+                value = str(listOfRoles)
+            else:
+                value = member[field]
+            memberData[mappedField] = value
+        csv_writer.writerow(memberData)
+
+    csv_content = csvOutput.getvalue()
+    csvOutput.close()
+
+    return MemberCSVResponse(
+        csvFile=csv_content,
+        successMessage="CSV file generated successfully",
+        errorMessage="",
+    )
 
 # register all queries
 queries = [
@@ -242,4 +310,5 @@ queries = [
     members,
     currentMembers,
     pendingMembers,
+    downloadMembersData,
 ]
