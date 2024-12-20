@@ -1,6 +1,6 @@
 import json
 from functools import cached_property
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, Union, List
 
 import strawberry
 from strawberry.fastapi import BaseContext
@@ -85,3 +85,16 @@ class SimpleMemberInput:
 @strawberry.input
 class SimpleClubInput:
     cid: str
+
+
+@strawberry.input
+class MemberInputDataReportDetails:
+    clubid: str | None
+    fields: List[str]
+
+
+@strawberry.type
+class MemberCSVResponse:
+    csvFile: str
+    successMessage: str
+    errorMessage: str
