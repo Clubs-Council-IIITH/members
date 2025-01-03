@@ -91,6 +91,7 @@ def getUser(uid, cookies=None):
                     lastName
                     email
                     rollno
+                    batch
                 }
             }
         """

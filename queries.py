@@ -10,7 +10,14 @@ from models import Member
 from utils import getClubDetails, getUser
 
 # import all models and types
-from otypes import Info, MemberType, SimpleClubInput, SimpleMemberInput, MemberInputDataReportDetails, MemberCSVResponse
+from otypes import (
+    Info,
+    MemberType,
+    SimpleClubInput,
+    SimpleMemberInput,
+    MemberInputDataReportDetails,
+    MemberCSVResponse,
+)
 
 """
 Member Queries
@@ -33,9 +40,7 @@ def member(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     uid = user["uid"]
     member_input = jsonable_encoder(memberInput)
 
-    if (member_input["cid"] != uid or user["role"] != "club") and user[
-        "role"
-    ] != "cc":
+    if (member_input["cid"] != uid or user["role"] != "club") and user["role"] != "cc":
         raise Exception("Not Authenticated to access this API")
 
     member = membersdb.find_one(
@@ -88,9 +93,7 @@ def memberRoles(uid: str, info: Info) -> List[MemberType]:
 
         if len(roles_result) > 0:
             result["roles"] = roles_result
-            members.append(
-                MemberType.from_pydantic(Member.model_validate(result))
-            )
+            members.append(MemberType.from_pydantic(Member.model_validate(result)))
 
     return members
 
@@ -141,9 +144,7 @@ def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
 
             if len(roles_result) > 0:
                 result["roles"] = roles_result
-                members.append(
-                    MemberType.from_pydantic(Member.model_validate(result))
-                )
+                members.append(MemberType.from_pydantic(Member.model_validate(result)))
 
         return members
 
@@ -185,7 +186,7 @@ def currentMembers(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
             roles_result = []
 
             for i in roles:
-                if i["deleted"] is True or i["end_year"] is not None:
+                if i["deleted"] is True or int(i["end_year"]) is not None:
                     continue
                 if i["approved"] is False:
                     continue
@@ -193,9 +194,7 @@ def currentMembers(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
 
             if len(roles_result) > 0:
                 result["roles"] = roles_result
-                members.append(
-                    MemberType.from_pydantic(Member.model_validate(result))
-                )
+                members.append(MemberType.from_pydantic(Member.model_validate(result)))
 
         return members
     else:
@@ -229,68 +228,121 @@ def pendingMembers(info: Info) -> List[MemberType]:
 
             if len(roles_result) > 0:
                 result["roles"] = roles_result
-                members.append(
-                    MemberType.from_pydantic(Member.model_validate(result))
-                )
+                members.append(MemberType.from_pydantic(Member.model_validate(result)))
 
         return members
     else:
         raise Exception("No Member Result/s Found")
 
+
 @strawberry.field
-def downloadMembersData(details: MemberInputDataReportDetails, info: Info) -> MemberCSVResponse:
+def downloadMembersData(
+    details: MemberInputDataReportDetails, info: Info
+) -> MemberCSVResponse:
     user = info.context.user
     if user is None:
         raise Exception("You do not have permission to access this resource.")
 
-    results = membersdb.find({"cid": details.clubid}, {"_id": 0})
+    if details.clubid != "allclubs":
+        results = membersdb.find({"cid": details.clubid}, {"_id": 0})
+    else:
+        results = membersdb.find({"_id": 0})
 
     allMembers = []
     for result in results:
         roles = result["roles"]
         roles_result = []
+        currentMember = False
+        withinTimeframe = False
 
         for i in roles:
             if i["deleted"] is True:
                 continue
+            if details.typeMembers == "current" and i["end_year"] is None:
+                currentMember = True
+            elif details.typeMembers == "past" and (
+                (
+                    details.dateRoles[1]
+                    >= (2024 if i["end_year"] is None else int(i["end_year"]))
+                    and details.dateRoles[0]
+                    <= (2024 if i["end_year"] is None else int(i["end_year"]))
+                )
+                or (
+                    details.dateRoles[1] >= int(i["start_year"])
+                    and details.dateRoles[0] <= int(i["start_year"])
+                )
+            ):
+                withinTimeframe = True
+
             roles_result.append(i)
 
         if len(roles_result) > 0:
             result["roles"] = roles_result
-            allMembers.append(
-                result
-            )
+            if details.typeMembers == "current" and currentMember == True:
+                allMembers.append(result)
+            elif details.typeMembers == "past" and withinTimeframe == True:
+                allMembers.append(result)
+            elif details.typeMembers == "all":
+                allMembers.append(result)
 
-    headerMapping = {"clubid": "Club Name", "uid": "Name", "poc": "Is POC", "roles": "Roles"}
+    headerMapping = {
+        "clubid": "Club Name",
+        "uid": "Name",
+        "rollno": "Roll No",
+        "batch": "Batch",
+        "email": "Email",
+        "partofclub": "Is Currently Part of Club",
+        "roles": "Roles",
+        "poc": "Is POC",
+    }
 
     # Prepare CSV content
     csvOutput = io.StringIO()
-    fieldnames = [
-        headerMapping.get(field.lower(), field)
-        for field in details.fields
-    ]
+    fieldnames = [headerMapping.get(field.lower(), field) for field in details.fields]
     csv_writer = csv.DictWriter(csvOutput, fieldnames=fieldnames)
     csv_writer.writeheader()
     clubName = getClubDetails(details.clubid, info.context.cookies)["name"]
 
     for member in allMembers:
         memberData = {}
+        userDetails = getUser(member["uid"], info.context.cookies)
+
         for field in details.fields:
             value = ""
             mappedField = headerMapping.get(field.lower())
             if field == "clubid":
                 value = clubName
             elif field == "uid":
-                userDetails = getUser(member[field], info.context.cookies)
-                value = userDetails["firstName"] + " " +userDetails["lastName"]
+                value = userDetails["firstName"] + " " + userDetails["lastName"]
+            elif field == "rollno":
+                value = userDetails["rollno"]
+            elif field == "batch":
+                value = userDetails["batch"]
+            elif field == "email":
+                value = userDetails["email"]
+            elif field == "partofclub":
+                value = "No"
+                for role in member["roles"]:
+                    if role["end_year"] is None:
+                        value = "Yes"
+                        break
             elif field == "roles":
                 listOfRoles = []
-                for i in member[field]:
-                    roleFormatting = [i["name"], i["start_year"], i["end_year"]]
-                    listOfRoles.append(roleFormatting)
+                for i in member["roles"]:
+                    roleFormatting = [
+                        i["name"],
+                        int(i["start_year"]),
+                        int(i["end_year"]) if i["end_year"] is not None else None,
+                    ]
+                    if details.typeRoles == "all":
+                        listOfRoles.append(roleFormatting)
+                    elif details.typeRoles == "current":
+                        if roleFormatting[2] == None:
+                            listOfRoles.append(roleFormatting)
                 value = str(listOfRoles)
-            else:
-                value = member[field]
+            elif field == "poc":
+                value = "Yes" if member["poc"] == True else "No"
+
             memberData[mappedField] = value
         csv_writer.writerow(memberData)
 
@@ -302,6 +354,7 @@ def downloadMembersData(details: MemberInputDataReportDetails, info: Info) -> Me
         successMessage="CSV file generated successfully",
         errorMessage="",
     )
+
 
 # register all queries
 queries = [
