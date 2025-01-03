@@ -91,6 +91,7 @@ def getUser(uid, cookies=None):
                     lastName
                     email
                     rollno
+                    batch
                 }
             }
         """
@@ -110,3 +111,59 @@ def getUser(uid, cookies=None):
         return request.json()["data"]["userProfile"]
     except Exception:
         return None
+
+
+# get club name from club id
+def getClubDetails(
+    clubid: str,
+    cookies,
+) -> dict:
+    try:
+        query = """
+                    query Club($clubInput: SimpleClubInput!) {
+                        club(clubInput: $clubInput) {
+                            cid
+                            name
+                            email
+                            studentBody
+                            category
+                        }
+                    }
+                """
+        variable = {"clubInput": {"cid": clubid}}
+        request = requests.post(
+            "http://gateway/graphql",
+            json={"query": query, "variables": variable},
+            cookies=cookies,
+        )
+        return request.json()["data"]["club"]
+    except Exception:
+        return {}
+
+
+def getClubs(cookies=None):
+    """
+    Function to call the all clubs query
+    """
+    try:
+        query = """
+                    query AllClubs {
+                        allClubs {
+                            cid
+                            name
+                            code
+                            email
+                        }
+                    }
+                """
+        if cookies:
+            request = requests.post(
+                "http://gateway/graphql",
+                json={"query": query},
+                cookies=cookies,
+            )
+        else:
+            request = requests.post("http://gateway/graphql", json={"query": query})
+        return request.json()["data"]["allClubs"]
+    except Exception:
+        return []
