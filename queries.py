@@ -7,7 +7,7 @@ from fastapi.encoders import jsonable_encoder
 
 from db import membersdb
 from models import Member
-from utils import getClubDetails, getUser
+from utils import getClubDetails, getUser, getClubs
 
 # import all models and types
 from otypes import (
@@ -244,9 +244,14 @@ def downloadMembersData(
         raise Exception("You do not have permission to access this resource.")
 
     if details.clubid != "allclubs":
+        clubList = [details.clubid]
         results = membersdb.find({"cid": details.clubid}, {"_id": 0})
     else:
-        results = membersdb.find({"_id": 0})
+        allClubs = getClubs(info.context.cookies)
+        clubList = [club["cid"] for club in allClubs]
+        details.typeMembers = "current"
+
+    results = membersdb.find({"cid": {"$in": clubList}}, {"_id": 0})
 
     allMembers = []
     for result in results:
@@ -301,11 +306,21 @@ def downloadMembersData(
     fieldnames = [headerMapping.get(field.lower(), field) for field in details.fields]
     csv_writer = csv.DictWriter(csvOutput, fieldnames=fieldnames)
     csv_writer.writeheader()
-    clubName = getClubDetails(details.clubid, info.context.cookies)["name"]
+
+    # So that we don't have to query the club name for each member
+    clubNames = dict()
 
     for member in allMembers:
         memberData = {}
         userDetails = getUser(member["uid"], info.context.cookies)
+        if userDetails is None:
+            continue
+        if clubNames.get(member["cid"]) is None:
+            clubNames[member["cid"]] = getClubDetails(
+                member["cid"], info.context.cookies
+            )["name"]
+
+        clubName = clubNames.get(member["cid"])
 
         for field in details.fields:
             value = ""

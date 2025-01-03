@@ -112,6 +112,7 @@ def getUser(uid, cookies=None):
     except Exception:
         return None
 
+
 # get club name from club id
 def getClubDetails(
     clubid: str,
@@ -138,3 +139,31 @@ def getClubDetails(
         return request.json()["data"]["club"]
     except Exception:
         return {}
+
+
+def getClubs(cookies=None):
+    """
+    Function to call the all clubs query
+    """
+    try:
+        query = """
+                    query AllClubs {
+                        allClubs {
+                            cid
+                            name
+                            code
+                            email
+                        }
+                    }
+                """
+        if cookies:
+            request = requests.post(
+                "http://gateway/graphql",
+                json={"query": query},
+                cookies=cookies,
+            )
+        else:
+            request = requests.post("http://gateway/graphql", json={"query": query})
+        return request.json()["data"]["allClubs"]
+    except Exception:
+        return []
