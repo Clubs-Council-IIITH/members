@@ -93,6 +93,7 @@ class MemberInputDataReportDetails:
     fields: List[str]
     typeMembers: str
     typeRoles: str | None
+    batchFiltering: str
     dateRoles: List[int] | None
 
 

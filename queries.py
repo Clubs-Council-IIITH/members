@@ -245,7 +245,6 @@ def downloadMembersData(
 
     if details.clubid != "allclubs":
         clubList = [details.clubid]
-        results = membersdb.find({"cid": details.clubid}, {"_id": 0})
     else:
         allClubs = getClubs(info.context.cookies)
         clubList = [club["cid"] for club in allClubs]
@@ -254,6 +253,7 @@ def downloadMembersData(
     results = membersdb.find({"cid": {"$in": clubList}}, {"_id": 0})
 
     allMembers = []
+    userDetailsList = dict()
     for result in results:
         roles = result["roles"]
         roles_result = []
@@ -282,12 +282,24 @@ def downloadMembersData(
             roles_result.append(i)
 
         if len(roles_result) > 0:
+            append = False
             result["roles"] = roles_result
             if details.typeMembers == "current" and currentMember == True:
-                allMembers.append(result)
+                append = True
             elif details.typeMembers == "past" and withinTimeframe == True:
-                allMembers.append(result)
+                append = True
             elif details.typeMembers == "all":
+                append = True
+
+            if append:
+                # Last possible moment to filter by batch since getUser is expensive
+                if details.batchFiltering != "all":
+                    userDetails = getUser(result["uid"], info.context.cookies)
+                    if userDetails is None:
+                        continue
+                    if userDetails["batch"] != details.batchFiltering:
+                        continue
+                    userDetailsList[result["uid"]] = userDetails
                 allMembers.append(result)
 
     headerMapping = {
@@ -312,7 +324,10 @@ def downloadMembersData(
 
     for member in allMembers:
         memberData = {}
-        userDetails = getUser(member["uid"], info.context.cookies)
+        if userDetailsList.get(member["uid"]) is None:
+            userDetails = getUser(member["uid"], info.context.cookies)
+        else:
+            userDetails = userDetailsList.get(member["uid"])
         if userDetails is None:
             continue
         if clubNames.get(member["cid"]) is None:
