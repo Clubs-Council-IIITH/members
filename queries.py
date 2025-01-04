@@ -1,3 +1,16 @@
+"""
+Query resolvers
+
+This file contains the query resolvers.
+
+Resolvers:
+    member: Returns the details of a member of a specific club.
+    memberRoles: Returns the member with his current roles from all clubs.
+    members: Returns the details of all the members of a specific club.
+    currentMembers: Returns the details of all the current members of a specific club.
+    pendingMembers: Returns the details of all the pending members.
+"""
+
 from typing import List
 
 import strawberry
@@ -9,20 +22,31 @@ from models import Member
 # import all models and types
 from otypes import Info, MemberType, SimpleClubInput, SimpleMemberInput
 
-"""
-Member Queries
-"""
 
 
 @strawberry.field
 def member(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     """
-    Description:
-        Returns member details for a specific club
-    Scope: CC & Specific Club
-    Return Type: MemberType
-    Input: SimpleMemberInput (cid, uid)
+    Details of a member of a specific club
+
+    This method fetches the details of a member of a specific club.
+    The member is searched in the database using the cid and uid of the member.
+
+    Inputs:
+        memberInput (SimpleMemberInput): Contains the cid and uid of the member.
+        info (Info): Contains the logged in user's details.
+
+    Returns:
+        MemberType: Contains the details of the member.
+
+    Accessibility:
+        CC and club both have full access.
+
+    Raises Exception:
+        Not Authenticated/Not Authenticated to access this API: If the user is not authenticated.
+        No such Record: If the member with the given uid, cid is not found in the database.
     """
+
     user = info.context.user
     if user is None:
         raise Exception("Not Authenticated")
@@ -53,12 +77,27 @@ def member(memberInput: SimpleMemberInput, info: Info) -> MemberType:
 @strawberry.field
 def memberRoles(uid: str, info: Info) -> List[MemberType]:
     """
-    Description:
-        Returns member roles from each club
-    Scope: CC & Specific Club
-    Return Type: uid (str)
-    Input: SimpleMemberInput (cid, uid, roles)
+    Returns memeber along with his roles
+
+    A user can be part of many clubs.
+    And therefore have multiple roles, each in a different club.
+    This method searches member documents having the given uid.
+    It returns the member details in each club along with their current roles.
+
+    Inputs:
+        uid (str): The uid of the member.
+        info (Info): Contains the logged in user's details.
+
+    Returns:
+        List[MemberType]: Contains a list of member with their current roles.
+
+    Accessibility:
+        Public
+
+    Raises Exception:
+        No Member Result/s Found: If no member is found with the given uid.
     """
+
     user = info.context.user
     if user is None:
         role = "public"
@@ -95,17 +134,27 @@ def memberRoles(uid: str, info: Info) -> List[MemberType]:
 @strawberry.field
 def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
     """
-    Description:
-        For CC:
-            Returns all the non-deleted members.
-        For Specific Club:
-            Returns all the non-deleted members of that club.
-        For Public:
-            Returns all the non-deleted and approved members.
-    Scope: CC + Club (For All Members), Public (For Approved Members)
-    Return Type: List[MemberType]
-    Input: SimpleClubInput (cid)
+    Returns all the members of a club.
+
+    This method fetches all the members of a specific club.
+    For CC and the club, it returns all the members with their current non-deleted, approved and pending roles.
+    For public, it returns all the members with their current non-deleted and approved roles.
+
+    Inputs:
+        clubInput (SimpleClubInput): Contains the cid of the club.
+        info (Info): Contains the logged in user's details.
+
+    Returns:
+        List[MemberType]: Contains a list of members.
+
+    Accessibility:
+        CC and the same club both have full access.
+        Public has partial access.
+
+    Raises Exception:
+        No Member Result/s Found: If no member is found with the given cid.
     """
+
     user = info.context.user
     if user is None:
         role = "public"
@@ -151,14 +200,24 @@ def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
 @strawberry.field
 def currentMembers(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
     """
-    Description:
-        For Everyone:
-            Returns all the current non-deleted and approved members of the given clubid.
+    Returns the current members of a club.
 
-    Scope: Anyone (Non-Admin Function)
-    Return Type: List[MemberType]
-    Input: SimpleClubInput (cid)
+    Returns all the members with their current non-deleted and approved roles for the given clubid.
+
+    Input:
+        clubInput (SimpleClubInput): Contains the cid of the club.
+        info (Info): Contains the logged in user's details.
+
+    Returns:
+        List[MemberType]: Contains a list of members.
+
+    Accessibility:
+        Public.
+
+    Raises Exception:
+        No Member Result/s Found: If no member is found with the given cid.
     """  # noqa: E501
+
     user = info.context.user
     if user is None:
         role = "public"
@@ -202,11 +261,24 @@ def currentMembers(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
 @strawberry.field
 def pendingMembers(info: Info) -> List[MemberType]:
     """
-    Description: Returns all the non-deleted and non-approved members.
-    Scope: CC
-    Return Type: List[MemberType]
-    Input: None
+    Returns the pending members of all clubs.
+
+    Returns all the members with their current non-deleted and pending roles from all clubs.
+
+    Input:
+        info (Info): Contains the logged in user's details.
+
+    Returns:
+        List[MemberType]: Contains a list of members.
+
+    Accessibility:
+        Only CC has access.
+
+    Raises Exception:
+        No Member Result/s Found: If no member is found.
+    
     """
+    
     user = info.context.user
     if user is None or user["role"] not in ["cc"]:
         raise Exception("Not Authenticated")

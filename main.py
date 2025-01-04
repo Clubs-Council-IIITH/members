@@ -1,3 +1,11 @@
+"""
+Final Setup
+
+This file is used to setup the final schema for the subgraph.
+It imports the resolvers from the queries and mutations files and creates a final GraphQL schema.
+It sets up the Fast API for the Members Microservice.
+"""
+
 from os import getenv
 
 import strawberry

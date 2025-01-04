@@ -1,3 +1,19 @@
+"""
+MongoDB Initialization Module
+
+This module sets up a connection to a MongoDB database and ensures that the required indexes are created.
+This module connects to the MongoDB database using environment variables for authentication.
+Ensures that a 'unique_members' index is present on the `cid` and 'uid' fields in the Members collection.
+It specifically exports the members collection of the database.
+
+Environment Variables:
+    `MONGO_USERNAME` (str): MongoDB username. Defaults to "username".
+    `MONGO_PASSWORD` (str): MongoDB password. Defaults to "password".
+    `MONGO_PORT` (str): MongoDB port. Defaults to "27017".
+    `MONGO_DATABASE` (str): MongoDB database name. Defaults to "default".
+
+"""
+
 from os import getenv
 
 from pymongo import MongoClient

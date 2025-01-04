@@ -1,3 +1,15 @@
+"""
+Data Models for Members Microservice
+
+This file decides what and how a Members's information is stored in its MongoDB document.
+One user could be a part of multiple clubs.
+his membership in each club is stored in a separate document.
+
+It defines 2 models:
+    Member : Used for storing members information.
+    Roles : Used for storing a member's roles within the same club. Used within Member model.
+"""
+
 from typing import Any, List
 
 from bson import ObjectId
@@ -13,8 +25,28 @@ from pydantic_core import core_schema
 
 # for handling mongo ObjectIds
 class PyObjectId(ObjectId):
+    """
+    MongoDB ObjectId handler
+
+    This class contains clasmethods to validate and serialize ObjectIds.
+    ObjectIds of documents under the Clubs collection are stored under the 'id' field.
+    """
+
     @classmethod
     def __get_pydantic_core_schema__(cls, source_type: Any, handler):
+        """
+        Defines custom schema for Pydantic validation
+
+        This method is used to define the schema for the Pydantic model.
+
+        Args:
+            source_type (Any): The source type.
+            handler: The handler.
+
+        Returns:
+            dict: The schema for the Pydantic model.
+        """
+
         return core_schema.union_schema(
             [
                 # check if it's an instance first before doing any further work
@@ -26,16 +58,64 @@ class PyObjectId(ObjectId):
 
     @classmethod
     def validate(cls, v):
+        """
+        Validates the given ObjectId
+
+        Args:
+            v (Any): The value to validate.
+
+        Returns:
+            ObjectId: The validated ObjectId.
+
+        Raises:
+            ValueError: If the given value is not a valid ObjectId.
+        """
+
         if not ObjectId.is_valid(v):
             raise ValueError("Invalid ObjectId")
         return ObjectId(v)
 
     @classmethod
     def __get_pydantic_json_schema__(cls, field_schema):
+        """
+        Generates JSON schema
+
+        This method is used to generate the JSON schema for the Pydantic model.
+
+        Args:
+            field_schema (dict): The field schema.
+        """
+
         field_schema.update(type="string")
 
 
 class Roles(BaseModel):
+    """
+    Model for storing a member's roles
+
+    This model defines the structure to store a member's roles.
+
+    Attributes:
+        rid (str): Unique Identifier for a role, a role id.
+        name (str): Name of the role
+        start_year (int): Year the role started
+        end_year (Optional[int]): Year the role ended
+        approved (bool): Whether the role is approved
+        approval_time (Optional[str]): Time the role was approved
+        rejected (bool): Whether the role was rejected
+        rejection_time (Optional[str]): Time the role was rejected
+        deleted (bool): Whether the role is deleted
+
+    Field Validators:
+        check_end_year: Validates the end_year field based on the start_year field.checks if the end_year is smaller than the start_year.
+        check_status: Validates the status of the role based on the approved and rejected fields.
+
+    Raises Errors:
+        ValueError: If the end_year is smaller than the start_year.
+        ValueError: If the status of the role is not valid.If both approved and rejeted are True.
+        
+    """
+
     rid: str | None = Field(None, description="Unique Identifier for a role")
     name: str = Field(..., min_length=1, max_length=99)
     start_year: int = Field(..., ge=2010, le=2050)
@@ -71,6 +151,24 @@ class Roles(BaseModel):
 
 
 class Member(BaseModel):
+    """
+    Model for storing a member's information
+
+    This model defines the structure to store a member's information.
+
+    Attributes:
+        id (PyObjectId): Stores the ObjectId of the member's document.
+        cid (str): Unique Identifier for a club, a club id.
+        uid (str): Unique Identifier for a user, a user id.
+        creation_time (str): Time the member was created.
+        last_edited_time (str): Time the member's information was last edited.
+        roles (List[Roles]): List of Roles for that specific person.
+        poc (bool): Whether the member is a POC(Point of Contact) for the club.
+
+    Field Validators:
+        transform_uid: Transforms the uid field text to lowercase.
+    """
+
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     cid: str = Field(..., description="Club ID")
     uid: str = Field(..., description="User ID")

@@ -12,10 +12,22 @@ inter_communication_secret = os.getenv("INTER_COMMUNICATION_SECRET")
 
 def non_deleted_members(member_input) -> MemberType:
     """
-    Function to return non-deleted members for a particular cid, uid
+    Returns the non-deleted member
+
+    Function to return a non-deleted member for a particular cid, uid
     Only to be used in admin functions,
     as it returns both approved/non-approved members.
+
+    Inputs:
+        member_input (dict): Contains the cid and uid of the member.
+
+    Returns:
+        MemberType: Contains the details of the member.
+
+    Raises Exception:
+        No such Record: If the member with the given uid, cid is not found in the database.
     """
+    
     updated_sample = membersdb.find_one(
         {
             "$and": [
@@ -42,6 +54,7 @@ def unique_roles_id(uid, cid):
     """
     Function to give unique ids for each of the role in roles list
     """
+
     pipeline = [
         {
             "$set": {
@@ -82,7 +95,19 @@ def unique_roles_id(uid, cid):
 def getUser(uid, cookies=None):
     """
     Function to get a particular user details
+
+    This method makes a query to the user-service to get the details of a particular user.
+    It is used to get the details of a user.
+    It is resolved by the userProfile resolver. 
+
+    Inputs:
+        uid (str): The uid of the user.
+        cookies (dict): The cookies of the user.
+
+    Returns:
+            dict: The details of the user.
     """
+
     try:
         query = """
             query GetUserProfile($userInput: UserInput!) {

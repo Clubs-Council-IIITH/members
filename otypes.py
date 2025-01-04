@@ -1,3 +1,22 @@
+"""
+Types and Inputs
+
+It contains both Inputs and Types for taking inputs and returning outputs.
+It also contains the Context class which is used to pass the user details to the resolvers.
+
+Types:
+    Info : used to pass the user details to the resolvers.
+    PyObjectId : used to return ObjectId of a document.
+    RolesType : used to return all the details of a role.
+    MemberType : used to return all the details of a member.
+
+Inputs:
+    RolesInput : used to input name, start year and end year of the role.
+    FullMemberInput : used to input cid, uid, roles and poc(Optional) fields of the member.
+    SimpleMemberInput : used to input cid, uid and rid(Optional) of the member.
+    SimpleClubInput : used to input cid of the club.
+"""
+
 import json
 from functools import cached_property
 from typing import Dict, Optional, Union
