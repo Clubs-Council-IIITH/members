@@ -7,7 +7,7 @@ from fastapi.encoders import jsonable_encoder
 
 from db import membersdb
 from models import Member
-from utils import getClubDetails, getUser, getClubs
+from utils import getClubDetails, getUser, getClubs, getUsersInBulk
 
 # import all models and types
 from otypes import (
@@ -254,6 +254,7 @@ def downloadMembersData(
 
     allMembers = []
     userDetailsList = dict()
+    userIds = []
     for result in results:
         roles = result["roles"]
         roles_result = []
@@ -301,6 +302,9 @@ def downloadMembersData(
                         continue
                     userDetailsList[result["uid"]] = userDetails
                 allMembers.append(result)
+                userIds.append(result["uid"])
+    if details.batchFiltering == "all":
+        userDetailsList = getUsersInBulk(userIds, info.context.cookies)
 
     headerMapping = {
         "clubid": "Club Name",

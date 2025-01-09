@@ -111,7 +111,45 @@ def getUser(uid, cookies=None):
         return request.json()["data"]["userProfile"]
     except Exception:
         return None
+    
 
+def getUsersInBulk(uids, cookies=None):
+    """
+    Function to get user details in bulk, returns a dict with keys of user uids and value of user details
+    """
+    userProfiles = {}
+
+    # try:
+    query = """
+        query bulkUserProfiles($userInputs: [UserInput!]!) {
+            bulkUserProfiles(userInputs: $userInputs) {
+                firstName
+                lastName
+                email
+                rollno
+                batch
+            }
+        }
+    """
+    variable = {"userInputs": [{"uid": uid} for uid in uids]}
+    if cookies:
+        request = requests.post(
+            "http://gateway/graphql",
+            json={"query": query, "variables": variable},
+            cookies=cookies,
+        )
+    else:
+        request = requests.post(
+            "http://gateway/graphql",
+            json={"query": query, "variables": variable},
+        )
+
+    for i in range(len(uids)):
+        userProfiles[uids[i]] = request.json()["data"]["bulkUserProfiles"][i]
+
+    return userProfiles
+    # except Exception:
+    #     return None
 
 # get club name from club id
 def getClubDetails(
