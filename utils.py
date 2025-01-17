@@ -113,43 +113,81 @@ def getUser(uid, cookies=None):
         return None
     
 
-def getUsersByList(uids, cookies=None):
+def getUsersByList(uids: list, cookies=None):
     """
     Function to get user details in bulk, returns a dict with keys of user uids and value of user details
     """
     userProfiles = {}
 
-    # try:
-    query = """
-        query usersByList($userInputs: [UserInput!]!) {
-            usersByList(userInputs: $userInputs) {
-                firstName
-                lastName
-                email
-                rollno
-                batch
+    try:
+        query = """
+            query usersByList($userInputs: [UserInput!]!) {
+                usersByList(userInputs: $userInputs) {
+                    firstName
+                    lastName
+                    email
+                    rollno
+                    batch
+                }
             }
-        }
+        """
+        variable = {"userInputs": [{"uid": uid} for uid in uids]}
+        if cookies:
+            request = requests.post(
+                "http://gateway/graphql",
+                json={"query": query, "variables": variable},
+                cookies=cookies,
+            )
+        else:
+            request = requests.post(
+                "http://gateway/graphql",
+                json={"query": query, "variables": variable},
+            )
+
+        for i in range(len(uids)):
+            userProfiles[uids[i]] = request.json()["data"]["usersByList"][i]
+
+        return userProfiles
+    except Exception:
+        return None
+
+def getUsersByBatch(batch: int, cookies=None):
     """
-    variable = {"userInputs": [{"uid": uid} for uid in uids]}
-    if cookies:
-        request = requests.post(
-            "http://gateway/graphql",
-            json={"query": query, "variables": variable},
-            cookies=cookies,
-        )
-    else:
-        request = requests.post(
-            "http://gateway/graphql",
-            json={"query": query, "variables": variable},
-        )
+    Function to get all users in a particular batch
+    """
+    try:
+        batchDetails = dict()
+        query = """
+            query GetUsersByBatch($batchYear: Int!) {
+                usersByBatch(batchYear: $batchYear) {
+                    uid
+                    firstName
+                    lastName
+                    rollno
+                    batch
+                    email
+                }
+            }
+        """
+        variable = {"batchYear": batch}
+        if cookies:
+            request = requests.post(
+                "http://gateway/graphql",
+                json={"query": query, "variables": variable},
+                cookies=cookies,
+            )
+        else:
+            request = requests.post(
+                "http://gateway/graphql",
+                json={"query": query, "variables": variable},
+            )
 
-    for i in range(len(uids)):
-        userProfiles[uids[i]] = request.json()["data"]["usersByList"][i]
-
-    return userProfiles
-    # except Exception:
-    #     return None
+        for result in request.json()["data"]["usersByBatch"]:
+            batchDetails[result["uid"]] = result
+        
+        return batchDetails
+    except Exception:
+        return dict()
 
 # get club name from club id
 def getClubDetails(

@@ -7,7 +7,7 @@ from fastapi.encoders import jsonable_encoder
 
 from db import membersdb
 from models import Member
-from utils import getClubDetails, getUser, getClubs, getUsersByList
+from utils import getClubDetails, getUser, getClubs, getUsersByList, getUsersByBatch
 
 # import all models and types
 from otypes import (
@@ -253,6 +253,10 @@ def downloadMembersData(
     results = membersdb.find({"cid": {"$in": clubList}}, {"_id": 0})
 
     allMembers = []
+    if "allBatches" not in details.batchFiltering:
+        batchDetails = dict()
+        for batch in details.batchFiltering:
+            batchDetails.update(getUsersByBatch(int(batch), info.context.cookies))
     userDetailsList = dict()
     userIds = []
     for result in results:
@@ -292,19 +296,21 @@ def downloadMembersData(
             elif details.typeMembers == "all":
                 append = True
 
-            if append:
-                # Last possible moment to filter by batch since getUser is expensive
-                if details.batchFiltering != "all":
-                    userDetails = getUser(result["uid"], info.context.cookies)
-                    if userDetails is None:
-                        continue
-                    if userDetails["batch"] != details.batchFiltering:
-                        continue
+            if "allBatches" not in details.batchFiltering and append:
+                userDetails = batchDetails.get(result["uid"], None)
+                if userDetails is not None:
                     userDetailsList[result["uid"]] = userDetails
+                else: # Member is not in specified batch
+                    append = False
+
+            if append:
                 allMembers.append(result)
                 userIds.append(result["uid"])
-    if details.batchFiltering == "all":
+
+    # Get details of all members
+    if "allBatches" in details.batchFiltering:
         userDetailsList = getUsersByList(userIds, info.context.cookies)
+
     headerMapping = {
         "clubid": "Club Name",
         "uid": "Name",
@@ -327,10 +333,7 @@ def downloadMembersData(
 
     for member in allMembers:
         memberData = {}
-        if userDetailsList.get(member["uid"]) is None:
-            userDetails = getUser(member["uid"], info.context.cookies)
-        else:
-            userDetails = userDetailsList.get(member["uid"])
+        userDetails = userDetailsList.get(member["uid"])
         if userDetails is None:
             continue
         if clubNames.get(member["cid"]) is None:
