@@ -113,7 +113,7 @@ def getUser(uid, cookies=None):
         return None
     
 
-def getUsersInBulk(uids, cookies=None):
+def getUsersByList(uids, cookies=None):
     """
     Function to get user details in bulk, returns a dict with keys of user uids and value of user details
     """
@@ -121,8 +121,8 @@ def getUsersInBulk(uids, cookies=None):
 
     # try:
     query = """
-        query bulkUserProfiles($userInputs: [UserInput!]!) {
-            bulkUserProfiles(userInputs: $userInputs) {
+        query usersByList($userInputs: [UserInput!]!) {
+            usersByList(userInputs: $userInputs) {
                 firstName
                 lastName
                 email
@@ -145,7 +145,7 @@ def getUsersInBulk(uids, cookies=None):
         )
 
     for i in range(len(uids)):
-        userProfiles[uids[i]] = request.json()["data"]["bulkUserProfiles"][i]
+        userProfiles[uids[i]] = request.json()["data"]["usersByList"][i]
 
     return userProfiles
     # except Exception:
