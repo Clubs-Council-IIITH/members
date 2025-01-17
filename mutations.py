@@ -23,7 +23,7 @@ ist = pytz.timezone("Asia/Kolkata")
 @strawberry.mutation
 def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     """
-    Mutation resolver resolver to create a new member by a club or CC
+    Mutation resolver to create a new member by a club or CC
     
     Args:
         memberInput (FullMemberInput): Contains the details of the member.
