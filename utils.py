@@ -12,20 +12,16 @@ inter_communication_secret = os.getenv("INTER_COMMUNICATION_SECRET")
 
 def non_deleted_members(member_input) -> MemberType:
     """
-    Returns the non-deleted member
+    Returns a member with his non-deleted roles
 
-    Function to return a non-deleted member for a particular cid, uid
-    Only to be used in admin functions,
-    as it returns both approved/non-approved members.
-
-    Inputs:
-        member_input (dict): Contains the cid and uid of the member.
+    Args:
+        member_input (dict): json serialised FullMemberInput.
 
     Returns:
         MemberType: Contains the details of the member.
 
-    Raises Exception:
-        No such Record: If the member with the given uid, cid is not found in the database.
+    Raises:
+        Exception: No such Record
     """
     
     updated_sample = membersdb.find_one(
@@ -52,9 +48,12 @@ def non_deleted_members(member_input) -> MemberType:
 
 def unique_roles_id(uid, cid):
     """
-    Function to give unique ids for each of the role in roles list
+    Generates unique role ids for a member's roles
+    
+    Args:
+        uid (str): The uid of the user.
+        cid (str): The cid of the club.
     """
-
     pipeline = [
         {
             "$set": {
@@ -94,18 +93,14 @@ def unique_roles_id(uid, cid):
 
 def getUser(uid, cookies=None):
     """
-    Function to get a particular user details
+    Query request to the Users microservice to fetch user details. 
 
-    This method makes a query to the user-service to get the details of a particular user.
-    It is used to get the details of a user.
-    It is resolved by the userProfile resolver. 
-
-    Inputs:
+    Args:
         uid (str): The uid of the user.
         cookies (dict): The cookies of the user.
 
     Returns:
-            dict: The details of the user.
+        dict: The details of the user.
     """
 
     try:

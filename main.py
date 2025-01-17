@@ -1,9 +1,14 @@
 """
-Final Setup
+Main module for the Members Microservice.
 
-This file is used to setup the final schema for the subgraph.
-It imports the resolvers from the queries and mutations files and creates a final GraphQL schema.
-It sets up the Fast API for the Members Microservice.
+This module sets up the FastAPI application and integrates the Strawberry GraphQL schema.
+It includes the configuration for queries, mutations, and context.
+
+Attributes:
+    GLOBAL_DEBUG (str): Environment variable that Enables or Disables debug mode. Defaults to "False".
+    DEBUG (bool): Indicates whether the application is running in debug mode.
+    gql_app (GraphQLRouter): The GraphQL router for handling GraphQL requests.
+    app (FastAPI): The FastAPI application instance.
 """
 
 from os import getenv

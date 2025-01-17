@@ -1,15 +1,5 @@
 """
 Mutation resolvers
-
-It contains resolvers to create, edit and delete members and to approve/reject their roles.
-
-Resolvers:
-    createMember: Creates a new member.
-    editMember: Edits an existing member.
-    deleteMember: Deletes an existing member.
-    approveMember: Approves a role of a member.
-    rejectMember: Rejects a role of a member.
-    UpdateMembersCid: Updates all members of old_cid to new_cid.
 """
 
 from datetime import datetime
@@ -33,26 +23,22 @@ ist = pytz.timezone("Asia/Kolkata")
 @strawberry.mutation
 def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     """
-    Mutation to create a new member by that specific 'club' or cc
-
-    This method creates a new member in the database.
-
-    Inputs:
+    Mutation resolver resolver to create a new member by a club or CC
+    
+    Args:
         memberInput (FullMemberInput): Contains the details of the member.
         info (Info): Contains the logged in user's details.
 
     Returns:
         MemberType: Contains the details of the member.
 
-    Accessibility:
-        CC, original club accounts has full access.
-
-    Raises Exception:
-        Not Authenticated/Not Authenticated to access this API: If the user is not authenticated.
-        A record with same uid and cid already exists: If a member with the same uid and cid already exists in the database.
-        Invalid User id: If there does not exist a user with the given uid.
-        Roles cannot be empty: If the roles list is empty.
-        Start year cannot be greater than end year: If the start year is greater than the end year.
+    Raises:
+        Exception: Not Authenticated
+        Exception: Not Authenticated to access this API
+        Exception: A record with same uid and cid already exists
+        Exception: Invalid User ID
+        Exception: Roles cannot be empty
+        Exception: Start year cannot be greater than end year
     """
     
     user = info.context.user
@@ -127,25 +113,21 @@ def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
 @strawberry.mutation
 def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     """
-    Mutation to edit an already existing member+roles of that specific 'club'
+    Mutation resolver to edit a member by club and CC
 
-    This method edits an existing member in the database.
-    It can only be done by the club or cc account.
-
-    Inputs:
+    Args:
         memberInput (FullMemberInput): Contains the details of the member.
         info (Info): Contains the logged in user's details.
 
     Returns:
         MemberType: Contains the details of the member.
 
-    Accessibility:
-        CC, original club accounts has full access.
-
-    Raises Exception:
-        Not Authenticated/Not Authenticated to access this API: If the user is not authenticated.
-        Start year cannot be greater than end year: If the start year is greater than the end year.
-        No such record : If there is no record with the given uid and cid.
+    Raises:
+        Exception: Not Authenticated
+        Exception: Not Authenticated to access this API
+        Exception: No such Record!
+        Exception: Roles cannot be empty
+        Exception: Start year cannot be greater than end year
     """
 
     user = info.context.user
@@ -245,24 +227,19 @@ def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
 @strawberry.mutation
 def deleteMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     """
-    Mutation to delete an already existing member (role) of that specific 'club'
+    Mutation resolver to delete a member or member's role by club or CC
 
-    This method deletes an existing member in the database.
-    It can only be done by the club or cc account.
-
-    Inputs:
-        memberInput (SimpleMemberInput): Contains the details of the member.
+    Args:
+        memberInput (SimpleMemberInput): Contains the cid and uid of the member, and rid when deleting role.
         info (Info): Contains the logged in user's details.
     
     Returns:
         MemberType: Contains the details of the member.
 
-    Accessibility:
-        CC, original club accounts has full access.
-
-    Raises Exception:
-            Not Authenticated/Not Authenticated to access this API: If the user is not authenticated.
-            No such record : If there is no record with the given uid and cid.
+    Raises:
+        Exception: Not Authenticated
+        Exception: Not Authenticated to access this API
+        Exception: No such Record
     """  # noqa: E501
 
     user = info.context.user
@@ -326,23 +303,19 @@ def deleteMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
 @strawberry.mutation
 def approveMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     """
-    Mutation to approve a member role by 'cc'
-
-    This method approves a member role in the database.
-
-    Inputs:
-        memberInput (SimpleMemberInput): Contains the details of the member.cid, uid and rid.
+    Mutation resolver to approve a member's role by CC
+    
+    Args:
+        memberInput (SimpleMemberInput): Contains the details of the member and member's role.cid, uid and rid.
         info (Info): Contains the logged in user's details.
 
     Returns:
         MemberType: Contains the details of the member.
 
-    Accessibility:
-        only CC has full access.
-
-    Raises Exception:
-            Not Authenticated/Not Authenticated to access this API: If the user is not authenticated.
-            No such record : If there is no record with the given uid and cid
+    Raises:
+        Exception: Not Authenticated
+        Exception: Not Authenticated to access this API
+        Exception: No such Record
     """
 
     user = info.context.user
@@ -401,23 +374,19 @@ def approveMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
 @strawberry.mutation
 def rejectMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     """
-    Mutation to reject a member role by 'cc'
+    Mutation resolver to reject a member's role by CC
 
-    This method rejects a member role in the database.
-
-    Inputs:
+    Args:
         memberInput (SimpleMemberInput): Contains the details of the member.cid, uid and rid.
         info (Info): Contains the logged in user's details.
 
     Returns:
         MemberType: Contains the details of the member.
 
-    Accessibility:
-        only CC has full access.
-
-    Raises Exception:
-        Not Authenticated/Not Authenticated to access this API: If the user is not authenticated.
-        No such record : If there is no record with the given uid and cid
+    Raises:
+        Exception: Not Authenticated
+        Exception: Not Authenticated to access this API
+        Exception: No such Record
     """
 
     user = info.context.user
@@ -511,11 +480,9 @@ def updateMembersCid(
     inter_communication_secret: str | None = None,
 ) -> int:
     """
-    update all members of old_cid to new_cid
+    Update all members of a club from old_cid to new_cid when cid is changed, for CC
 
-    It updates all members with old_cid to new_cid
-
-    Input:
+    Args:
         old_cid: the old cid
         new_cid: the new cid
         inter_communication_secret (str | None): The inter communication secret.
@@ -523,12 +490,9 @@ def updateMembersCid(
     Returns:
         int: The number of updated members.
 
-    Accessibility:
-        only CC has full access.
-
-    Raises Exception:
-        Not Authenticated: If the user is not authenticated.
-        Authentication Error! Invalid secret!: If the inter communication secret is invalid.
+    Raises:
+        Exception: Not Authenticated!
+        Exception: Authentication Error! Invalid secret!
     """
 
     user = info.context.user

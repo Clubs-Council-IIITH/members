@@ -1,14 +1,5 @@
 """
 Query resolvers
-
-This file contains the query resolvers.
-
-Resolvers:
-    member: Returns the details of a member of a specific club.
-    memberRoles: Returns the member with his current roles from all clubs.
-    members: Returns the details of all the members of a specific club.
-    currentMembers: Returns the details of all the current members of a specific club.
-    pendingMembers: Returns the details of all the pending members.
 """
 
 from typing import List
@@ -27,24 +18,19 @@ from otypes import Info, MemberType, SimpleClubInput, SimpleMemberInput
 @strawberry.field
 def member(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     """
-    Details of a member of a specific club
+    Fetches details of a club member using the cid and uid given, for club and CC
 
-    This method fetches the details of a member of a specific club.
-    The member is searched in the database using the cid and uid of the member.
-
-    Inputs:
+    Args:
         memberInput (SimpleMemberInput): Contains the cid and uid of the member.
         info (Info): Contains the logged in user's details.
 
     Returns:
         MemberType: Contains the details of the member.
 
-    Accessibility:
-        CC and club both have full access.
-
-    Raises Exception:
-        Not Authenticated/Not Authenticated to access this API: If the user is not authenticated.
-        No such Record: If the member with the given uid, cid is not found in the database.
+    Raises:
+        Exception: Not Authenticated
+        Exception: Not Authenticated to access this API
+        Exception: No such Record
     """
 
     user = info.context.user
@@ -77,25 +63,22 @@ def member(memberInput: SimpleMemberInput, info: Info) -> MemberType:
 @strawberry.field
 def memberRoles(uid: str, info: Info) -> List[MemberType]:
     """
-    Returns memeber along with his roles
+    Fetches a club memeber along with his roles
 
-    A user can be part of many clubs.
-    And therefore have multiple roles, each in a different club.
-    This method searches member documents having the given uid.
-    It returns the member details in each club along with their current roles.
+    A user can be part of many clubs and therefore have multiple roles, each in a different club hence each in a different document.
+    This method searches for documents belonging to the same user.
+    It returns the user's non-deleted and approved roles details in all clubs, for public.
+    CC can also get unapproved roles.
 
-    Inputs:
-        uid (str): The uid of the member.
+    Args:
+        uid (str): The uid of the user.
         info (Info): Contains the logged in user's details.
 
     Returns:
         List[MemberType]: Contains a list of member with their current roles.
 
-    Accessibility:
-        Public
-
-    Raises Exception:
-        No Member Result/s Found: If no member is found with the given uid.
+    Raises:
+        Exception: No Member Result/s Found
     """
 
     user = info.context.user
@@ -136,23 +119,19 @@ def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
     """
     Returns all the members of a club.
 
-    This method fetches all the members of a specific club.
-    For CC and the club, it returns all the members with their current non-deleted, approved and pending roles.
+    This method fetches all the members of a club.
+    For CC and club, it returns all the members with their current non-deleted, approved and pending roles.
     For public, it returns all the members with their current non-deleted and approved roles.
 
-    Inputs:
+    Args:
         clubInput (SimpleClubInput): Contains the cid of the club.
         info (Info): Contains the logged in user's details.
 
     Returns:
         List[MemberType]: Contains a list of members.
 
-    Accessibility:
-        CC and the same club both have full access.
-        Public has partial access.
-
-    Raises Exception:
-        No Member Result/s Found: If no member is found with the given cid.
+    Raises:
+        Exception: No Member Result/s Found
     """
 
     user = info.context.user
@@ -200,22 +179,18 @@ def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
 @strawberry.field
 def currentMembers(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
     """
-    Returns the current members of a club.
+    Returns the current members of a club with their non-deleted, approved roles, for Public.
 
-    Returns all the members with their current non-deleted and approved roles for the given clubid.
-
-    Input:
+    Args:
         clubInput (SimpleClubInput): Contains the cid of the club.
         info (Info): Contains the logged in user's details.
 
     Returns:
         List[MemberType]: Contains a list of members.
 
-    Accessibility:
-        Public.
-
-    Raises Exception:
-        No Member Result/s Found: If no member is found with the given cid.
+    Raises:
+        Exception: Not Authenticated
+        Exception: No Member Result/s Found
     """  # noqa: E501
 
     user = info.context.user
@@ -261,22 +236,17 @@ def currentMembers(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
 @strawberry.field
 def pendingMembers(info: Info) -> List[MemberType]:
     """
-    Returns the pending members of all clubs.
+    Returns the pending members of all clubs with their non-deleted, pending roles for CC.
 
-    Returns all the members with their current non-deleted and pending roles from all clubs.
-
-    Input:
+    Args:
         info (Info): Contains the logged in user's details.
 
     Returns:
         List[MemberType]: Contains a list of members.
 
-    Accessibility:
-        Only CC has access.
-
-    Raises Exception:
-        No Member Result/s Found: If no member is found.
-    
+    Raises:
+        Exception: Not Authenticated
+        Exception: No Member Result/s Found    
     """
     
     user = info.context.user
