@@ -24,7 +24,7 @@ ist = pytz.timezone("Asia/Kolkata")
 def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     """
     Mutation resolver to create a new member by a club or CC
-    
+
     Args:
         memberInput (FullMemberInput): Contains the details of the member.
         info (Info): Contains the logged in user's details.
@@ -40,7 +40,7 @@ def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
         Exception: Roles cannot be empty
         Exception: Start year cannot be greater than end year
     """
-    
+
     user = info.context.user
     if user is None:
         raise Exception("Not Authenticated")
@@ -232,7 +232,7 @@ def deleteMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     Args:
         memberInput (SimpleMemberInput): Contains the cid and uid of the member, and rid when deleting role.
         info (Info): Contains the logged in user's details.
-    
+
     Returns:
         MemberType: Contains the details of the member.
 
@@ -304,7 +304,7 @@ def deleteMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
 def approveMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     """
     Mutation resolver to approve a member's role by CC
-    
+
     Args:
         memberInput (SimpleMemberInput): Contains the details of the member and member's role.cid, uid and rid.
         info (Info): Contains the logged in user's details.
@@ -485,7 +485,7 @@ def updateMembersCid(
     Args:
         old_cid: the old cid
         new_cid: the new cid
-        inter_communication_secret (str | None): The inter communication secret.
+        inter_communication_secret (str | None): The inter communication secret. Defaults to None.
 
     Returns:
         int: The number of updated members.

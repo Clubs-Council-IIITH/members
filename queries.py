@@ -14,7 +14,6 @@ from models import Member
 from otypes import Info, MemberType, SimpleClubInput, SimpleMemberInput
 
 
-
 @strawberry.field
 def member(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     """
@@ -246,9 +245,9 @@ def pendingMembers(info: Info) -> List[MemberType]:
 
     Raises:
         Exception: Not Authenticated
-        Exception: No Member Result/s Found    
+        Exception: No Member Result/s Found
     """
-    
+
     user = info.context.user
     if user is None or user["role"] not in ["cc"]:
         raise Exception("Not Authenticated")

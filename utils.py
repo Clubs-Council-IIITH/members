@@ -23,7 +23,7 @@ def non_deleted_members(member_input) -> MemberType:
     Raises:
         Exception: No such Record
     """
-    
+
     updated_sample = membersdb.find_one(
         {
             "$and": [
@@ -49,7 +49,7 @@ def non_deleted_members(member_input) -> MemberType:
 def unique_roles_id(uid, cid):
     """
     Generates unique role ids for a member's roles
-    
+
     Args:
         uid (str): The uid of the user.
         cid (str): The cid of the club.
@@ -93,11 +93,11 @@ def unique_roles_id(uid, cid):
 
 def getUser(uid, cookies=None):
     """
-    Query request to the Users microservice to fetch user details. 
+    Query request to the Users microservice to fetch user details.
 
     Args:
         uid (str): The uid of the user.
-        cookies (dict): The cookies of the user.
+        cookies (dict): The cookies of the user. Defaults to None.
 
     Returns:
         dict: The details of the user.

@@ -18,7 +18,8 @@ from models import Member, PyObjectId, Roles
 class Context(BaseContext):
     """
     Class provides user metadata and cookies from request headers, has methods for doing this.
-    """    
+    """
+
     @cached_property
     def user(self) -> Union[Dict, None]:
         if not self.request:
@@ -51,6 +52,7 @@ class RolesType:
     """
     Type used to return all the details regarding a role of a club member
     """
+
     pass
 
 
@@ -70,6 +72,7 @@ class MemberType:
     """
     Type used to return all the details of a club member
     """
+
     pass
 
 
@@ -81,6 +84,7 @@ class RolesInput:
     """
     Input used to take a role's name, start and end year
     """
+
     pass
 
 
@@ -91,6 +95,7 @@ class FullMemberInput:
     """
     Input used to take a member's cid, uid, roles and poc(optional) fields
     """
+
     poc: Optional[bool] = strawberry.UNSET
 
 
@@ -99,6 +104,7 @@ class SimpleMemberInput:
     """
     Input used to take a member's cid, uid and rid(optional) fields
     """
+
     cid: str
     uid: str
     rid: Optional[str]
@@ -109,4 +115,5 @@ class SimpleClubInput:
     """
     Input used to take a club's cid
     """
+
     cid: str
