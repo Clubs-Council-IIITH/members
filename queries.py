@@ -324,7 +324,12 @@ def downloadMembersData(
 
     # Prepare CSV content
     csvOutput = io.StringIO()
-    fieldnames = [headerMapping.get(field.lower(), field) for field in details.fields]
+
+    fieldnames = []
+    for field in headerMapping: # Add fields in the order specified in the headerMapping
+        if field in details.fields:
+            fieldnames.append(headerMapping.get(field.lower(), field))
+
     csv_writer = csv.DictWriter(csvOutput, fieldnames=fieldnames)
     csv_writer.writeheader()
 
