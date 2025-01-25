@@ -1,3 +1,7 @@
+"""
+Types and Inputs
+"""
+
 import json
 from functools import cached_property
 from typing import Dict, Optional, Union
@@ -12,6 +16,11 @@ from models import Member, PyObjectId, Roles
 
 # custom context class
 class Context(BaseContext):
+    """
+    Class provides user metadata and cookies from request headers, has 
+    methods for doing this.
+    """
+
     @cached_property
     def user(self) -> Union[Dict, None]:
         if not self.request:
@@ -29,10 +38,10 @@ class Context(BaseContext):
         return cookies
 
 
-# custom info type
+"""custom info Type for user metadata"""
 Info = _Info[Context, RootValueType]
 
-# serialize PyObjectId as a scalar type
+"""A scalar Type for serializing PyObjectId, used for id field"""
 PyObjectIdType = strawberry.scalar(
     PyObjectId, serialize=str, parse_value=lambda v: PyObjectId(v)
 )
@@ -41,6 +50,10 @@ PyObjectIdType = strawberry.scalar(
 # TYPES
 @strawberry.experimental.pydantic.type(model=Roles, all_fields=True)
 class RolesType:
+    """
+    Type used to return all the details regarding a role of a club member
+    """
+
     pass
 
 
@@ -57,6 +70,10 @@ class RolesType:
     ],
 )
 class MemberType:
+    """
+    Type used to return all the details of a club member
+    """
+
     pass
 
 
@@ -65,6 +82,10 @@ class MemberType:
     model=Roles, fields=["name", "start_year", "end_year"]
 )
 class RolesInput:
+    """
+    Input used to take a role's name, start and end year
+    """
+
     pass
 
 
@@ -72,11 +93,19 @@ class RolesInput:
     model=Member, fields=["cid", "uid", "roles"]
 )
 class FullMemberInput:
+    """
+    Input used to take a member's cid, uid, roles and poc(optional) fields
+    """
+
     poc: Optional[bool] = strawberry.UNSET
 
 
 @strawberry.input
 class SimpleMemberInput:
+    """
+    Input used to take a member's cid, uid and rid(optional) fields
+    """
+
     cid: str
     uid: str
     rid: Optional[str]
@@ -84,4 +113,8 @@ class SimpleMemberInput:
 
 @strawberry.input
 class SimpleClubInput:
+    """
+    Input used to take a club's cid
+    """
+
     cid: str

@@ -1,3 +1,7 @@
+"""
+Query resolvers
+"""
+
 from typing import List
 
 import strawberry
@@ -9,20 +13,26 @@ from models import Member
 # import all models and types
 from otypes import Info, MemberType, SimpleClubInput, SimpleMemberInput
 
-"""
-Member Queries
-"""
-
 
 @strawberry.field
 def member(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     """
-    Description:
-        Returns member details for a specific club
-    Scope: CC & Specific Club
-    Return Type: MemberType
-    Input: SimpleMemberInput (cid, uid)
+    Fetches details of a club member using the cid and uid given,
+    for club and CC
+
+    Args:
+        memberInput (SimpleMemberInput): Contains the cid and uid of the member.
+        info (Info): Contains the logged in user's details.
+
+    Returns:
+        MemberType: Contains the details of the member.
+
+    Raises:
+        Exception: Not Authenticated
+        Exception: Not Authenticated to access this API
+        Exception: No such Record
     """
+
     user = info.context.user
     if user is None:
         raise Exception("Not Authenticated")
@@ -53,12 +63,26 @@ def member(memberInput: SimpleMemberInput, info: Info) -> MemberType:
 @strawberry.field
 def memberRoles(uid: str, info: Info) -> List[MemberType]:
     """
-    Description:
-        Returns member roles from each club
-    Scope: CC & Specific Club
-    Return Type: uid (str)
-    Input: SimpleMemberInput (cid, uid, roles)
+    Fetches a club memeber along with his roles
+
+    A user can be part of many clubs and therefore have multiple roles, 
+    each in a different club hence each in a different document.
+    This method searches for documents belonging to the same user.
+    It returns the user's non-deleted and approved roles details in all 
+    clubs, for public.
+    CC can also get unapproved roles.
+
+    Args:
+        uid (str): The uid of the user.
+        info (Info): Contains the logged in user's details.
+
+    Returns:
+        List[MemberType]: Contains a list of member with their current roles.
+
+    Raises:
+        Exception: No Member Result/s Found
     """
+
     user = info.context.user
     if user is None:
         role = "public"
@@ -95,17 +119,25 @@ def memberRoles(uid: str, info: Info) -> List[MemberType]:
 @strawberry.field
 def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
     """
-    Description:
-        For CC:
-            Returns all the non-deleted members.
-        For Specific Club:
-            Returns all the non-deleted members of that club.
-        For Public:
-            Returns all the non-deleted and approved members.
-    Scope: CC + Club (For All Members), Public (For Approved Members)
-    Return Type: List[MemberType]
-    Input: SimpleClubInput (cid)
+    Returns all the members of a club.
+
+    This method fetches all the members of a club.
+    For CC and club, it returns all the members with their current 
+    non-deleted, approved and pending roles.
+    For public, it returns all the members with their current non-deleted 
+    and approved roles.
+
+    Args:
+        clubInput (SimpleClubInput): Contains the cid of the club.
+        info (Info): Contains the logged in user's details.
+
+    Returns:
+        List[MemberType]: Contains a list of members.
+
+    Raises:
+        Exception: No Member Result/s Found
     """
+
     user = info.context.user
     if user is None:
         role = "public"
@@ -151,14 +183,21 @@ def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
 @strawberry.field
 def currentMembers(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
     """
-    Description:
-        For Everyone:
-            Returns all the current non-deleted and approved members of the given clubid.
+    Returns the current members of a club with their non-deleted, 
+    approved roles, for Public.
 
-    Scope: Anyone (Non-Admin Function)
-    Return Type: List[MemberType]
-    Input: SimpleClubInput (cid)
+    Args:
+        clubInput (SimpleClubInput): Contains the cid of the club.
+        info (Info): Contains the logged in user's details.
+
+    Returns:
+        List[MemberType]: Contains a list of members.
+
+    Raises:
+        Exception: Not Authenticated
+        Exception: No Member Result/s Found
     """  # noqa: E501
+
     user = info.context.user
     if user is None:
         role = "public"
@@ -202,11 +241,20 @@ def currentMembers(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
 @strawberry.field
 def pendingMembers(info: Info) -> List[MemberType]:
     """
-    Description: Returns all the non-deleted and non-approved members.
-    Scope: CC
-    Return Type: List[MemberType]
-    Input: None
+    Returns the pending members of all clubs with their non-deleted, 
+    pending roles for CC.
+
+    Args:
+        info (Info): Contains the logged in user's details.
+
+    Returns:
+        List[MemberType]: Contains a list of members.
+
+    Raises:
+        Exception: Not Authenticated
+        Exception: No Member Result/s Found
     """
+
     user = info.context.user
     if user is None or user["role"] not in ["cc"]:
         raise Exception("Not Authenticated")
