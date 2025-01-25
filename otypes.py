@@ -17,7 +17,7 @@ from models import Member, PyObjectId, Roles
 # custom context class
 class Context(BaseContext):
     """
-    Class provides user metadata and cookies from request headers, has 
+    Class provides user metadata and cookies from request headers, has
     methods for doing this.
     """
 
