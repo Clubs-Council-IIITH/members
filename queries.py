@@ -17,7 +17,8 @@ from otypes import Info, MemberType, SimpleClubInput, SimpleMemberInput
 @strawberry.field
 def member(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     """
-    Fetches details of a club member using the cid and uid given, for club and CC
+    Fetches details of a club member using the cid and uid given,
+    for club and CC
 
     Args:
         memberInput (SimpleMemberInput): Contains the cid and uid of the member.
@@ -64,9 +65,11 @@ def memberRoles(uid: str, info: Info) -> List[MemberType]:
     """
     Fetches a club memeber along with his roles
 
-    A user can be part of many clubs and therefore have multiple roles, each in a different club hence each in a different document.
+    A user can be part of many clubs and therefore have multiple roles, 
+    each in a different club hence each in a different document.
     This method searches for documents belonging to the same user.
-    It returns the user's non-deleted and approved roles details in all clubs, for public.
+    It returns the user's non-deleted and approved roles details in all 
+    clubs, for public.
     CC can also get unapproved roles.
 
     Args:
@@ -119,8 +122,10 @@ def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
     Returns all the members of a club.
 
     This method fetches all the members of a club.
-    For CC and club, it returns all the members with their current non-deleted, approved and pending roles.
-    For public, it returns all the members with their current non-deleted and approved roles.
+    For CC and club, it returns all the members with their current 
+    non-deleted, approved and pending roles.
+    For public, it returns all the members with their current non-deleted 
+    and approved roles.
 
     Args:
         clubInput (SimpleClubInput): Contains the cid of the club.
@@ -178,7 +183,8 @@ def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
 @strawberry.field
 def currentMembers(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
     """
-    Returns the current members of a club with their non-deleted, approved roles, for Public.
+    Returns the current members of a club with their non-deleted, 
+    approved roles, for Public.
 
     Args:
         clubInput (SimpleClubInput): Contains the cid of the club.
@@ -235,7 +241,8 @@ def currentMembers(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
 @strawberry.field
 def pendingMembers(info: Info) -> List[MemberType]:
     """
-    Returns the pending members of all clubs with their non-deleted, pending roles for CC.
+    Returns the pending members of all clubs with their non-deleted, 
+    pending roles for CC.
 
     Args:
         info (Info): Contains the logged in user's details.

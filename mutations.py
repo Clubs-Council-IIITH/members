@@ -230,7 +230,8 @@ def deleteMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     Mutation resolver to delete a member or member's role by club or CC
 
     Args:
-        memberInput (SimpleMemberInput): Contains the cid and uid of the member, and rid when deleting role.
+        memberInput (SimpleMemberInput): Contains the cid and uid of the 
+                                         member, and rid when deleting role.
         info (Info): Contains the logged in user's details.
 
     Returns:
@@ -306,7 +307,8 @@ def approveMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     Mutation resolver to approve a member's role by CC
 
     Args:
-        memberInput (SimpleMemberInput): Contains the details of the member and member's role.cid, uid and rid.
+        memberInput (SimpleMemberInput): Contains the details of the member 
+                                         and member's role.cid, uid and rid.
         info (Info): Contains the logged in user's details.
 
     Returns:
@@ -377,7 +379,8 @@ def rejectMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     Mutation resolver to reject a member's role by CC
 
     Args:
-        memberInput (SimpleMemberInput): Contains the details of the member.cid, uid and rid.
+        memberInput (SimpleMemberInput): Contains the details of the 
+                                         member.cid, uid and rid.
         info (Info): Contains the logged in user's details.
 
     Returns:
@@ -480,12 +483,14 @@ def updateMembersCid(
     inter_communication_secret: str | None = None,
 ) -> int:
     """
-    Update all members of a club from old_cid to new_cid when cid is changed, for CC
+    Update all members of a club from old_cid to new_cid when cid is changed,
+    for CC
 
     Args:
         old_cid: the old cid
         new_cid: the new cid
-        inter_communication_secret (str | None): The inter communication secret. Defaults to None.
+        inter_communication_secret (str | None): The inter communication 
+                                                 secret. Defaults to None.
 
     Returns:
         int: The number of updated members.
