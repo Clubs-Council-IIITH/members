@@ -21,7 +21,8 @@ def member(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     for club and CC
 
     Args:
-        memberInput (SimpleMemberInput): Contains the cid and uid of the member.
+        memberInput (SimpleMemberInput): Contains the cid and 
+                                         uid of the member.
         info (Info): Contains the logged in user's details.
 
     Returns:
