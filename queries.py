@@ -243,8 +243,8 @@ def downloadMembersData(
     if user is None:
         raise Exception("You do not have permission to access this resource.")
 
-    if details.clubid != "allclubs":
-        clubList = [details.clubid]
+    if "allclubs" not in details.clubid:
+        clubList = details.clubid
     else:
         allClubs = getClubs(info.context.cookies)
         clubList = [club["cid"] for club in allClubs]

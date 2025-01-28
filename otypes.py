@@ -89,7 +89,7 @@ class SimpleClubInput:
 
 @strawberry.input
 class MemberInputDataReportDetails:
-    clubid: str | None
+    clubid: List[str] | None
     fields: List[str]
     typeMembers: str
     typeRoles: str | None
