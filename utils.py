@@ -91,7 +91,7 @@ def unique_roles_id(uid, cid):
     )
 
 
-def getUser(uid, cookies=None):
+def getUser(uid, cookies=None) -> dict | None:
     """
     Query request to the Users microservice to fetch user details.
 
