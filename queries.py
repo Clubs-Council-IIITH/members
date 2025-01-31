@@ -1,9 +1,9 @@
-import csv
-import io
-
 """
 Query resolvers
 """
+
+import csv
+import io
 
 from typing import List
 
@@ -339,9 +339,9 @@ def downloadMembersData(
         if len(roles_result) > 0:
             append = False
             result["roles"] = roles_result
-            if details.typeMembers == "current" and currentMember == True:
+            if details.typeMembers == "current" and currentMember:
                 append = True
-            elif details.typeMembers == "past" and withinTimeframe == True:
+            elif details.typeMembers == "past" and withinTimeframe:
                 append = True
             elif details.typeMembers == "all":
                 append = True
@@ -428,11 +428,11 @@ def downloadMembersData(
                     if details.typeRoles == "all":
                         listOfRoles.append(roleFormatting)
                     elif details.typeRoles == "current":
-                        if roleFormatting[2] == None:
+                        if roleFormatting[2] is None:
                             listOfRoles.append(roleFormatting)
                 value = str(listOfRoles)
             elif field == "poc":
-                value = "Yes" if member["poc"] == True else "No"
+                value = "Yes" if member["poc"] else "No"
 
             memberData[mappedField] = value
         csv_writer.writerow(memberData)

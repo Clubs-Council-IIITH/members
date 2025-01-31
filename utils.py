@@ -135,7 +135,8 @@ def getUser(uid, cookies=None) -> dict | None:
 
 def getUsersByList(uids: list, cookies=None):
     """
-    Function to get user details in bulk, returns a dict with keys of user uids and value of user details
+    Function to get user details in bulk, returns a dict with keys of user uids
+    and value of user details
     """
     userProfiles = {}
 
