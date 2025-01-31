@@ -111,6 +111,7 @@ def getUser(uid, cookies=None) -> dict | None:
                     lastName
                     email
                     rollno
+                    batch
                 }
             }
         """
@@ -130,3 +131,134 @@ def getUser(uid, cookies=None) -> dict | None:
         return request.json()["data"]["userProfile"]
     except Exception:
         return None
+    
+
+def getUsersByList(uids: list, cookies=None):
+    """
+    Function to get user details in bulk, returns a dict with keys of user uids and value of user details
+    """
+    userProfiles = {}
+
+    try:
+        query = """
+            query usersByList($userInputs: [UserInput!]!) {
+                usersByList(userInputs: $userInputs) {
+                    firstName
+                    lastName
+                    email
+                    rollno
+                    batch
+                }
+            }
+        """
+        variable = {"userInputs": [{"uid": uid} for uid in uids]}
+        if cookies:
+            request = requests.post(
+                "http://gateway/graphql",
+                json={"query": query, "variables": variable},
+                cookies=cookies,
+            )
+        else:
+            request = requests.post(
+                "http://gateway/graphql",
+                json={"query": query, "variables": variable},
+            )
+
+        for i in range(len(uids)):
+            userProfiles[uids[i]] = request.json()["data"]["usersByList"][i]
+
+        return userProfiles
+    except Exception:
+        return None
+
+def getUsersByBatch(batch: int, cookies=None):
+    """
+    Function to get all users in a particular batch
+    """
+    try:
+        batchDetails = dict()
+        query = """
+            query GetUsersByBatch($batchYear: Int!) {
+                usersByBatch(batchYear: $batchYear) {
+                    uid
+                    firstName
+                    lastName
+                    rollno
+                    batch
+                    email
+                }
+            }
+        """
+        variable = {"batchYear": batch}
+        if cookies:
+            request = requests.post(
+                "http://gateway/graphql",
+                json={"query": query, "variables": variable},
+                cookies=cookies,
+            )
+        else:
+            request = requests.post(
+                "http://gateway/graphql",
+                json={"query": query, "variables": variable},
+            )
+
+        for result in request.json()["data"]["usersByBatch"]:
+            batchDetails[result["uid"]] = result
+        
+        return batchDetails
+    except Exception:
+        return dict()
+
+# get club name from club id
+def getClubDetails(
+    clubid: str,
+    cookies,
+) -> dict:
+    try:
+        query = """
+                    query Club($clubInput: SimpleClubInput!) {
+                        club(clubInput: $clubInput) {
+                            cid
+                            name
+                            email
+                            category
+                        }
+                    }
+                """
+        variable = {"clubInput": {"cid": clubid}}
+        request = requests.post(
+            "http://gateway/graphql",
+            json={"query": query, "variables": variable},
+            cookies=cookies,
+        )
+        return request.json()["data"]["club"]
+    except Exception:
+        return {}
+
+
+def getClubs(cookies=None):
+    """
+    Function to call the all clubs query
+    """
+    try:
+        query = """
+                    query AllClubs {
+                        allClubs {
+                            cid
+                            name
+                            code
+                            email
+                        }
+                    }
+                """
+        if cookies:
+            request = requests.post(
+                "http://gateway/graphql",
+                json={"query": query},
+                cookies=cookies,
+            )
+        else:
+            request = requests.post("http://gateway/graphql", json={"query": query})
+        return request.json()["data"]["allClubs"]
+    except Exception:
+        return []

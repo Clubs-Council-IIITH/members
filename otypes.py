@@ -4,7 +4,7 @@ Types and Inputs
 
 import json
 from functools import cached_property
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, Union, List
 
 import strawberry
 from strawberry.fastapi import BaseContext
@@ -118,3 +118,20 @@ class SimpleClubInput:
     """
 
     cid: str
+
+
+@strawberry.input
+class MemberInputDataReportDetails:
+    clubid: List[str] | None
+    fields: List[str]
+    typeMembers: str
+    typeRoles: str | None
+    batchFiltering: List[str]
+    dateRoles: List[int] | None
+
+
+@strawberry.type
+class MemberCSVResponse:
+    csvFile: str
+    successMessage: str
+    errorMessage: str
