@@ -4,7 +4,7 @@ Types and Inputs
 
 import json
 from functools import cached_property
-from typing import Dict, Optional, Union, List
+from typing import Dict, List, Optional, Union
 
 import strawberry
 from strawberry.fastapi import BaseContext

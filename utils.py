@@ -131,7 +131,7 @@ def getUser(uid, cookies=None) -> dict | None:
         return request.json()["data"]["userProfile"]
     except Exception:
         return None
-    
+
 
 def getUsersByList(uids: list, cookies=None):
     """
@@ -172,6 +172,7 @@ def getUsersByList(uids: list, cookies=None):
     except Exception:
         return None
 
+
 def getUsersByBatch(batch: int, cookies=None):
     """
     Function to get all users in a particular batch
@@ -205,10 +206,11 @@ def getUsersByBatch(batch: int, cookies=None):
 
         for result in request.json()["data"]["usersByBatch"]:
             batchDetails[result["uid"]] = result
-        
+
         return batchDetails
     except Exception:
         return dict()
+
 
 # get club name from club id
 def getClubDetails(
@@ -259,7 +261,9 @@ def getClubs(cookies=None):
                 cookies=cookies,
             )
         else:
-            request = requests.post("http://gateway/graphql", json={"query": query})
+            request = requests.post(
+                "http://gateway/graphql", json={"query": query}
+            )
         return request.json()["data"]["allClubs"]
     except Exception:
         return []

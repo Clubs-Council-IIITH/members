@@ -4,7 +4,6 @@ Query resolvers
 
 import csv
 import io
-
 from typing import List
 
 import strawberry
@@ -12,16 +11,21 @@ from fastapi.encoders import jsonable_encoder
 
 from db import membersdb
 from models import Member
-from utils import getClubDetails, getUser, getClubs, getUsersByList, getUsersByBatch
 
 # import all models and types
 from otypes import (
     Info,
+    MemberCSVResponse,
+    MemberInputDataReportDetails,
     MemberType,
     SimpleClubInput,
     SimpleMemberInput,
-    MemberInputDataReportDetails,
-    MemberCSVResponse,
+)
+from utils import (
+    getClubDetails,
+    getClubs,
+    getUsersByBatch,
+    getUsersByList,
 )
 
 
@@ -52,7 +56,9 @@ def member(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     uid = user["uid"]
     member_input = jsonable_encoder(memberInput)
 
-    if (member_input["cid"] != uid or user["role"] != "club") and user["role"] != "cc":
+    if (member_input["cid"] != uid or user["role"] != "club") and user[
+        "role"
+    ] != "cc":
         raise Exception("Not Authenticated to access this API")
 
     member = membersdb.find_one(
@@ -119,7 +125,9 @@ def memberRoles(uid: str, info: Info) -> List[MemberType]:
 
         if len(roles_result) > 0:
             result["roles"] = roles_result
-            members.append(MemberType.from_pydantic(Member.model_validate(result)))
+            members.append(
+                MemberType.from_pydantic(Member.model_validate(result))
+            )
 
     return members
 
@@ -178,7 +186,9 @@ def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
 
             if len(roles_result) > 0:
                 result["roles"] = roles_result
-                members.append(MemberType.from_pydantic(Member.model_validate(result)))
+                members.append(
+                    MemberType.from_pydantic(Member.model_validate(result))
+                )
 
         return members
 
@@ -235,7 +245,9 @@ def currentMembers(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
 
             if len(roles_result) > 0:
                 result["roles"] = roles_result
-                members.append(MemberType.from_pydantic(Member.model_validate(result)))
+                members.append(
+                    MemberType.from_pydantic(Member.model_validate(result))
+                )
 
         return members
     else:
@@ -278,7 +290,9 @@ def pendingMembers(info: Info) -> List[MemberType]:
 
             if len(roles_result) > 0:
                 result["roles"] = roles_result
-                members.append(MemberType.from_pydantic(Member.model_validate(result)))
+                members.append(
+                    MemberType.from_pydantic(Member.model_validate(result))
+                )
 
         return members
     else:
@@ -306,7 +320,9 @@ def downloadMembersData(
     if "allBatches" not in details.batchFiltering:
         batchDetails = dict()
         for batch in details.batchFiltering:
-            batchDetails.update(getUsersByBatch(int(batch), info.context.cookies))
+            batchDetails.update(
+                getUsersByBatch(int(batch), info.context.cookies)
+            )
     userDetailsList = dict()
     userIds = []
     for result in results:
@@ -350,7 +366,7 @@ def downloadMembersData(
                 userDetails = batchDetails.get(result["uid"], None)
                 if userDetails is not None:
                     userDetailsList[result["uid"]] = userDetails
-                else: # Member is not in specified batch
+                else:  # Member is not in specified batch
                     append = False
 
             if append:
@@ -376,7 +392,9 @@ def downloadMembersData(
     csvOutput = io.StringIO()
 
     fieldnames = []
-    for field in headerMapping: # Add fields in the order specified in the headerMapping
+    for field in (
+        headerMapping
+    ):  # Add fields in the order specified in the headerMapping
         if field in details.fields:
             fieldnames.append(headerMapping.get(field.lower(), field))
 
@@ -404,7 +422,9 @@ def downloadMembersData(
             if field == "clubid":
                 value = clubName
             elif field == "uid":
-                value = userDetails["firstName"] + " " + userDetails["lastName"]
+                value = (
+                    userDetails["firstName"] + " " + userDetails["lastName"]
+                )
             elif field == "rollno":
                 value = userDetails["rollno"]
             elif field == "batch":
@@ -423,7 +443,9 @@ def downloadMembersData(
                     roleFormatting = [
                         i["name"],
                         int(i["start_year"]),
-                        int(i["end_year"]) if i["end_year"] is not None else None,
+                        int(i["end_year"])
+                        if i["end_year"] is not None
+                        else None,
                     ]
                     if details.typeRoles == "all":
                         listOfRoles.append(roleFormatting)
