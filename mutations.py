@@ -1,3 +1,7 @@
+"""
+Mutation resolvers
+"""
+
 from datetime import datetime
 from os import getenv
 
@@ -19,8 +23,24 @@ ist = pytz.timezone("Asia/Kolkata")
 @strawberry.mutation
 def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     """
-    Mutation to create a new member by that specific 'club' or cc
+    Mutation resolver to create a new member by a club or CC
+
+    Args:
+        memberInput (FullMemberInput): Contains the details of the member.
+        info (Info): Contains the logged in user's details.
+
+    Returns:
+        MemberType: Contains the details of the member.
+
+    Raises:
+        Exception: Not Authenticated
+        Exception: Not Authenticated to access this API
+        Exception: A record with same uid and cid already exists
+        Exception: Invalid User ID
+        Exception: Roles cannot be empty
+        Exception: Start year cannot be greater than end year
     """
+
     user = info.context.user
     if user is None:
         raise Exception("Not Authenticated")
@@ -93,8 +113,23 @@ def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
 @strawberry.mutation
 def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     """
-    Mutation to edit an already existing member+roles of that specific 'club'
+    Mutation resolver to edit a member by club and CC
+
+    Args:
+        memberInput (FullMemberInput): Contains the details of the member.
+        info (Info): Contains the logged in user's details.
+
+    Returns:
+        MemberType: Contains the details of the member.
+
+    Raises:
+        Exception: Not Authenticated
+        Exception: Not Authenticated to access this API
+        Exception: No such Record!
+        Exception: Roles cannot be empty
+        Exception: Start year cannot be greater than end year
     """
+
     user = info.context.user
     if user is None:
         raise Exception("Not Authenticated")
@@ -192,8 +227,22 @@ def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
 @strawberry.mutation
 def deleteMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     """
-    Mutation to delete an already existing member (role) of that specific 'club'
+    Mutation resolver to delete a member or member's role by club or CC
+
+    Args:
+        memberInput (SimpleMemberInput): Contains the cid and uid of the
+                                         member, and rid when deleting role.
+        info (Info): Contains the logged in user's details.
+
+    Returns:
+        MemberType: Contains the details of the member.
+
+    Raises:
+        Exception: Not Authenticated
+        Exception: Not Authenticated to access this API
+        Exception: No such Record
     """  # noqa: E501
+
     user = info.context.user
     if user is None:
         raise Exception("Not Authenticated")
@@ -255,8 +304,22 @@ def deleteMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
 @strawberry.mutation
 def approveMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     """
-    Mutation to approve a member role by 'cc'
+    Mutation resolver to approve a member's role by CC
+
+    Args:
+        memberInput (SimpleMemberInput): Contains the details of the member
+                                         and member's role.cid, uid and rid.
+        info (Info): Contains the logged in user's details.
+
+    Returns:
+        MemberType: Contains the details of the member.
+
+    Raises:
+        Exception: Not Authenticated
+        Exception: Not Authenticated to access this API
+        Exception: No such Record
     """
+
     user = info.context.user
     if user is None:
         raise Exception("Not Authenticated")
@@ -284,6 +347,7 @@ def approveMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     current_time = datetime.now(ist)
     time_str = current_time.strftime("%d-%m-%Y %I:%M %p IST")
 
+    # approves the role along with entering approval time
     roles = []
     for i in existing_data["roles"]:
         if not member_input["rid"] or i["rid"] == member_input["rid"]:
@@ -312,8 +376,22 @@ def approveMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
 @strawberry.mutation
 def rejectMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     """
-    Mutation to reject a member role by 'cc'
+    Mutation resolver to reject a member's role by CC
+
+    Args:
+        memberInput (SimpleMemberInput): Contains the details of the
+                                         member.cid, uid and rid.
+        info (Info): Contains the logged in user's details.
+
+    Returns:
+        MemberType: Contains the details of the member.
+
+    Raises:
+        Exception: Not Authenticated
+        Exception: Not Authenticated to access this API
+        Exception: No such Record
     """
+
     user = info.context.user
     if user is None:
         raise Exception("Not Authenticated")
@@ -405,8 +483,23 @@ def updateMembersCid(
     inter_communication_secret: str | None = None,
 ) -> int:
     """
-    update all memberd of old_cid to new_cid
+    Update all members of a club from old_cid to new_cid when cid is changed,
+    for CC
+
+    Args:
+        old_cid: the old cid
+        new_cid: the new cid
+        inter_communication_secret (str | None): The inter communication
+                                                 secret. Defaults to None.
+
+    Returns:
+        int: The number of updated members.
+
+    Raises:
+        Exception: Not Authenticated!
+        Exception: Authentication Error! Invalid secret!
     """
+
     user = info.context.user
 
     if user is None or user["role"] not in ["cc"]:

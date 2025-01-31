@@ -1,5 +1,6 @@
-.venv/
+*venv/
 .vscode/
 .in
 .out
 __pycache__/
+build/
