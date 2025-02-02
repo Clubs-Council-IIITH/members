@@ -2,7 +2,7 @@
 Mutation resolvers
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from os import getenv
 import json
 import pytz
@@ -534,6 +534,19 @@ def requestCertificate(
     user = info.context.user
     if user is None:
         raise Exception("Not Authenticated")
+
+    last_certificate = certificatesdb.find_one(
+        {"user_id": user["uid"]},
+        sort=[("requested_at", -1)]
+    )
+
+    if last_certificate:
+        last_applied_date = last_certificate["status"]["requested_at"]
+        last_applied_date = datetime.fromisoformat(last_applied_date)
+        if last_applied_date:
+            time_diff = datetime.now(pytz.timezone("Asia/Kolkata")) - last_applied_date
+            if time_diff < timedelta(days=15):
+                raise Exception("You can only request a certificate once every 15 days.")
 
     # Generate certificate number
     year = datetime.now().year
