@@ -378,14 +378,14 @@ def downloadMembersData(
         userDetailsList = getUsersByList(userIds, info.context.cookies)
 
     headerMapping = {
-        "clubid": "ClubName",
+        "clubid": "Club Name",
         "uid": "Name",
-        "rollno": "RollNo",
+        "rollno": "Roll No",
         "batch": "Batch",
         "email": "Email",
-        "partofclub": "IsActive",
-        "roles": "Roles",
-        "poc": "IsPOC",
+        "partofclub": "Is Part of Club",
+        "roles": "Roles [Role, Start Year, End Year]",
+        "poc": "Is POC",
     }
 
     # Prepare CSV content
