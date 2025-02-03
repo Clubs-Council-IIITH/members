@@ -237,7 +237,7 @@ def currentMembers(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
             roles_result = []
 
             for i in roles:
-                if i["deleted"] is True or int(i["end_year"]) is not None:
+                if i["deleted"] or i["end_year"] is not None:
                     continue
                 if i["approved"] is False:
                     continue
