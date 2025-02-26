@@ -2,21 +2,30 @@
 Mutation resolvers
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from os import getenv
-
+import json
 import pytz
 import strawberry
 from fastapi.encoders import jsonable_encoder
 
-from db import membersdb
-from models import Member
+from db import membersdb, certificatesdb
+from models import Member, Certificate, CertificateStates
 
 # import all models and types
-from otypes import FullMemberInput, Info, MemberType, SimpleMemberInput
-from utils import getUser, non_deleted_members, unique_roles_id
+from otypes import (
+        FullMemberInput,
+        Info,
+        MemberType,
+        SimpleMemberInput,
+        CertificateInput,
+        CertificateType
+    )
+from queries import memberRolesHelper
+from utils import getUser, non_deleted_members, unique_roles_id, generate_key, getClubs
 
 inter_communication_secret_global = getenv("INTER_COMMUNICATION_SECRET")
+key_length = int(getenv("KEY_LENGTH", 8))
 ist = pytz.timezone("Asia/Kolkata")
 
 
@@ -518,6 +527,192 @@ def updateMembersCid(
     return upd_ref.modified_count
 
 
+@strawberry.mutation
+def requestCertificate(
+    certificate_input: CertificateInput, info: Info
+) -> CertificateType:
+    user = info.context.user
+    if user is None:
+        raise Exception("Not Authenticated")
+
+    last_certificate = certificatesdb.find_one(
+        {"user_id": user["uid"]},
+        sort=[("requested_at", -1)]
+    )
+
+    if last_certificate:
+        last_applied_date = last_certificate["status"]["requested_at"]
+        last_applied_date = datetime.fromisoformat(last_applied_date)
+        if last_applied_date:
+            time_diff = datetime.now(pytz.timezone("Asia/Kolkata")) - last_applied_date
+            if time_diff < timedelta(days=15):
+                raise Exception("You can only request a certificate once every 15 days.")
+
+    # Generate certificate number
+    year = datetime.now().year
+    next_year = year + 1
+    year_code = f"{str(year)[2:]}{str(next_year)[2:]}"
+
+    count = (
+        certificatesdb.count_documents(
+            {"certificate_number": {"$regex": f"^SLC/{year_code}/"}}
+        )
+        + 1
+    )
+    certificate_number = f"SLC/{year_code}/{count:04d}"
+
+    user_memberships = memberRolesHelper(user["uid"], info)
+    if not user_memberships:
+        raise Exception("No Memberships Found")
+
+    clubs = getClubs(info.context.cookies)
+    club_name_map = {club["cid"]: club["name"] for club in clubs}
+    memberships = []
+    for m in user_memberships:
+        roles = m.roles
+        cid = m.cid
+        for role in roles:
+            memberships.append(
+                {
+                    "startYear": role.start_year,
+                    "endYear": role.end_year,
+                    "name": role.name,
+                    "cid": cid,
+                    "clubName": club_name_map.get(cid, "Unknown Club"),
+                }
+            )
+
+    certificate_data = {
+        "user_id": user["uid"],
+        "memberships": memberships,
+    }
+
+    new_certificate = Certificate(
+        user_id=user["uid"],
+        certificate_number=certificate_number,
+        certificate_data=json.dumps(certificate_data),
+        request_reason=certificate_input.request_reason,
+        key=generate_key(key_length),
+    )
+
+    created_id = certificatesdb.insert_one(
+        jsonable_encoder(new_certificate)
+    ).inserted_id
+
+    created_certificate = Certificate.parse_obj(
+        certificatesdb.find_one({"_id": created_id})
+    )
+
+    return CertificateType.from_pydantic(created_certificate)
+
+
+@strawberry.mutation
+def approveCertificate(certificate_number: str, info: Info) -> CertificateType:
+    noaccess_error = Exception(
+        "Can not access certificate. Either it does not exist or user does not have perms."  # noqa: E501
+    )
+    user = info.context.user
+
+    if user is None or user["role"] not in ["cc", "slo"]:
+        raise Exception("Not Authenticated or Unauthorized")
+
+    certificate = certificatesdb.find_one(
+        {"certificate_number": certificate_number}
+    )
+
+    if not certificate:
+        raise noaccess_error
+
+    current_status = certificate["state"]
+    updation = {}
+
+    current_time = datetime.now(pytz.timezone("Asia/Kolkata")).isoformat()  # Convert to ISO format string
+
+    if (
+        current_status == CertificateStates.pending_cc.value
+        and user["role"] == "cc"
+    ):
+        new_status = CertificateStates.pending_slo.value
+        updation = {
+            "$set": {
+                "state": new_status,
+                "status.cc_approved_at": current_time,
+                "status.cc_approver": user["uid"],
+            }
+        }
+    elif (
+        current_status == CertificateStates.pending_slo.value
+        and user["role"] == "slo"
+    ):
+        new_status = CertificateStates.approved.value
+        updation = {
+            "$set": {
+                "state": new_status,
+                "status.slo_approved_at": current_time,
+                "status.slo_approver": user["uid"],
+            }
+        }
+    else:
+        raise noaccess_error
+
+    certificatesdb.update_one(
+        {"certificate_number": certificate_number}, updation
+    )
+
+    updated_certificate = Certificate.parse_obj(
+        certificatesdb.find_one({"certificate_number": certificate_number})
+    )
+    return CertificateType.from_pydantic(updated_certificate)
+
+
+@strawberry.mutation
+def rejectCertificate(certificate_number: str, info: Info) -> CertificateType:
+    user = info.context.user
+    if user is None or user["role"] not in ["cc", "slo"]:
+        raise Exception("Not Authenticated or Unauthorized")
+
+    certificate = certificatesdb.find_one(
+        {"certificate_number": certificate_number}
+    )
+
+    if not certificate:
+        raise Exception("No such certificate found")
+
+    current_status = certificate["state"]
+    updation = {}
+
+    if (
+        current_status == CertificateStates.pending_cc.value
+        and user["role"] == "cc"
+    ):
+        new_status = CertificateStates.rejected.value
+        updation = {
+            "$set": {
+                "state": new_status,
+            }
+        }
+    elif (
+        current_status == CertificateStates.pending_slo.value
+        and user["role"] == "slo"
+    ):
+        new_status = CertificateStates.rejected.value
+        updation = {
+            "$set": {
+                "state": new_status,
+            }
+        }
+    else:
+        raise Exception("Can not reject certificate")
+
+    certificatesdb.update_one(
+        {"certificate_number": certificate_number}, updation
+    )
+
+    updated_certificate = Certificate.parse_obj(
+        certificatesdb.find_one({"certificate_number": certificate_number})
+    )
+    return CertificateType.from_pydantic(updated_certificate)
+
 # register all mutations
 mutations = [
     createMember,
@@ -526,4 +721,7 @@ mutations = [
     approveMember,
     rejectMember,
     updateMembersCid,
+    requestCertificate,
+    approveCertificate,
+    rejectCertificate,
 ]
