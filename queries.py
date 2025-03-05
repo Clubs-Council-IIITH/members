@@ -41,7 +41,7 @@ def member(memberInput: SimpleMemberInput, info: Info) -> MemberType:
         info (Info): Contains the logged in user's details.
 
     Returns:
-        Contains the details of the member.
+        (MemberType): Contains the details of the member.
 
     Raises:
         Exception: Not Authenticated
@@ -93,7 +93,7 @@ def memberRoles(uid: str, info: Info) -> List[MemberType]:
         info (Info): Contains the logged in user's details.
 
     Returns:
-        Contains a list of member with their current roles.
+        (List[MemberType]): Contains a list of member with their current roles.
 
     Raises:
         Exception: No Member Result/s Found
@@ -148,7 +148,7 @@ def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
         info (Info): Contains the logged in user's details.
 
     Returns:
-        Contains a list of members.
+        (List[MemberType]): Contains a list of members.
 
     Raises:
         Exception: No Member Result/s Found
@@ -207,7 +207,7 @@ def currentMembers(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
         info (Info): Contains the logged in user's details.
 
     Returns:
-        Contains a list of members.
+        (List[MemberType]): Contains a list of members.
 
     Raises:
         Exception: Not Authenticated
@@ -264,7 +264,7 @@ def pendingMembers(info: Info) -> List[MemberType]:
         info (Info): Contains the logged in user's details.
 
     Returns:
-        Contains a list of members.
+        (List[MemberType]): Contains a list of members.
 
     Raises:
         Exception: Not Authenticated
@@ -313,7 +313,7 @@ def downloadMembersData(
         info (Info): Contains the logged in user's details.
 
     Returns:
-        Contains the data of all members specific to the
+        (MemberCSVResponse): Contains the data of all members specific to the
             requested fields like batch and status in a CSV format.
 
     Raises:

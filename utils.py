@@ -18,7 +18,7 @@ def non_deleted_members(member_input) -> MemberType:
         member_input (dict): json serialised FullMemberInput.
 
     Returns:
-        Contains the details of the member.
+        (MemberType): Contains the details of the member.
 
     Raises:
         Exception: No such Record
@@ -100,7 +100,7 @@ def getUser(uid, cookies=None) -> dict | None:
         cookies (dict): The cookies of the user. Defaults to None.
 
     Returns:
-        The details of the user.
+        (dict | None): The details of the user.
     """
 
     try:
@@ -144,7 +144,7 @@ def getUsersByList(uids: list, cookies=None) -> dict | None:
         cookies (dict): The cookies of the user. Defaults to None.
 
     Returns:
-        keys of user uids and value of user details
+        (dict | None): keys of user uids and value of user details
     """
     userProfiles = {}
 
@@ -191,7 +191,7 @@ def getUsersByBatch(batch: int, cookies=None) -> dict | None:
         cookies (dict): The cookies of the user. Defaults to None.
 
     Returns:
-        keys of user uids and value of user details
+        (dict | None): keys of user uids and value of user details
     """
     try:
         batchDetails = dict()
@@ -241,7 +241,7 @@ def getClubDetails(
         cookies (dict): The cookies of the user. Defaults to None.
 
     Returns:
-        the club details
+        (dict | None): the club details
     """
 
     try:
@@ -274,7 +274,7 @@ def getClubs(cookies=None) -> dict | None:
         cookies (dict): The cookies of the user. Defaults to None.
 
     Returns:
-        list of all clubs
+        (dict | None): list of all clubs
     """
     try:
         query = """

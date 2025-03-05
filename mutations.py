@@ -30,7 +30,7 @@ def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
         info (Info): Contains the logged in user's details.
 
     Returns:
-        Contains the details of the member.
+        (MemberType): Contains the details of the member.
 
     Raises:
         Exception: Not Authenticated
@@ -120,7 +120,7 @@ def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
         info (Info): Contains the logged in user's details.
 
     Returns:
-        Contains the details of the member.
+        (MemberType): Contains the details of the member.
 
     Raises:
         Exception: Not Authenticated
@@ -235,7 +235,7 @@ def deleteMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
         info (Info): Contains the logged in user's details.
 
     Returns:
-        Contains the details of the member.
+        (MemberType): Contains the details of the member.
 
     Raises:
         Exception: Not Authenticated
@@ -312,7 +312,7 @@ def approveMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
         info (Info): Contains the logged in user's details.
 
     Returns:
-        Contains the details of the member.
+        (MemberType): Contains the details of the member.
 
     Raises:
         Exception: Not Authenticated
@@ -384,7 +384,7 @@ def rejectMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
         info (Info): Contains the logged in user's details.
 
     Returns:
-        Contains the details of the member.
+        (MemberType): Contains the details of the member.
 
     Raises:
         Exception: Not Authenticated
@@ -493,7 +493,7 @@ def updateMembersCid(
                                                  secret. Defaults to None.
 
     Returns:
-        The number of updated members.
+        (int): The number of updated members.
 
     Raises:
         Exception: Not Authenticated!
