@@ -35,6 +35,7 @@ client = MongoClient(MONGO_URI)
 # get database
 db = client[MONGO_DATABASE]
 membersdb = db.members
+certificatesdb = db.certificates
 
 try:
     # check if the members index exists
@@ -48,5 +49,14 @@ try:
         print("The members index was created.")
 
     print(membersdb.index_information())
+except Exception:
+    pass
+
+try:
+    if "unique_certificate_number" not in certificatesdb.index_information():
+        certificatesdb.create_index(
+            [("certificate_number", 1)], unique=True, name="unique_certificate_number"
+        )
+        print("The certificate_number index was created.")
 except Exception:
     pass

@@ -5,12 +5,12 @@ Query resolvers
 import csv
 import io
 from typing import List
-
+import math
 import strawberry
 from fastapi.encoders import jsonable_encoder
 
-from db import membersdb
-from models import Member
+from db import membersdb, certificatesdb
+from models import Member, Certificate, CertificateStates
 
 # import all models and types
 from otypes import (
@@ -20,6 +20,7 @@ from otypes import (
     MemberType,
     SimpleClubInput,
     SimpleMemberInput,
+    CertificateType,
 )
 from utils import (
     getClubDetails,
@@ -76,8 +77,7 @@ def member(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     return MemberType.from_pydantic(Member.model_validate(member))
 
 
-@strawberry.field
-def memberRoles(uid: str, info: Info) -> List[MemberType]:
+def memberRolesHelper(uid: str, info: Info) -> List[MemberType]:
     """
     Fetches a club memeber along with his roles
 
@@ -131,6 +131,9 @@ def memberRoles(uid: str, info: Info) -> List[MemberType]:
 
     return members
 
+@strawberry.field
+def memberRoles(uid: str, info: Info) -> List[MemberType]:
+    return memberRolesHelper(uid, info)
 
 @strawberry.field
 def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
@@ -298,6 +301,116 @@ def pendingMembers(info: Info) -> List[MemberType]:
     else:
         raise Exception("No Member Result/s Found")
 
+
+@strawberry.field
+def getUserCertificates(info: Info) -> List[CertificateType]:
+    user = info.context.user
+    if user is None:
+        raise Exception("Not Authenticated")
+
+    certificates = certificatesdb.find({"user_id": user["uid"]})
+    return [
+        CertificateType.from_pydantic(Certificate.parse_obj(cert))
+        for cert in certificates
+    ]
+
+
+@strawberry.field
+def getPendingCertificates(info: Info) -> List[CertificateType]:
+    """
+    Description: Returns all pending certificates for CC and SLO roles.
+    Scope: CC, SLO
+    Return Type: List[CertificateType]
+    Input: None
+    """
+    user = info.context.user
+    if user is None:
+        raise Exception("Not Authenticated")
+
+    if user["role"] == "cc":
+        pending_statuses = [CertificateStates.pending_cc.value]
+    elif user["role"] == "slo":
+        pending_statuses = [CertificateStates.pending_slo.value]
+    else:
+        raise Exception("You do not have permission to access this resource.")
+
+    results = certificatesdb.find({"state": {"$in": pending_statuses}})
+
+    if results:
+        return [
+            CertificateType.from_pydantic(Certificate.parse_obj(cert))
+            for cert in results
+        ]
+    else:
+        return []
+
+
+@strawberry.field
+def verifyCertificate(certificate_number: str, key: str) -> CertificateType:
+    certificate = certificatesdb.find_one(
+        {"certificate_number": certificate_number}
+    )
+
+    if not certificate:
+        raise Exception("Certificate not found")
+
+    if certificate["state"] == CertificateStates.rejected.value:
+        raise Exception("Certificate has been rejected")
+
+    if certificate["key"] != key:
+        raise Exception("Wrong key provided")
+
+    if certificate["state"] != CertificateStates.approved.value:
+        raise Exception("Certificate approval is pending")
+
+    return CertificateType.from_pydantic(Certificate.parse_obj(certificate))
+
+
+@strawberry.field
+def getCertificateByNumber(
+    info: Info, certificate_number: str
+) -> CertificateType:
+    user = info.context.user
+    if user is None:
+        raise Exception("Not Authenticated")
+    role = user["role"]
+
+    certificate = certificatesdb.find_one(
+        {"certificate_number": certificate_number}
+    )
+    if not certificate:
+        raise Exception("Certificate not found")
+
+    if (
+        role not in ["cc", "slo"]
+        and certificate["state"] != CertificateStates.approved.value
+    ):
+        raise Exception("You do not have permission to access this resource.")
+
+    return CertificateType.from_pydantic(Certificate.parse_obj(certificate))
+
+
+@strawberry.field
+def getAllCertificates(
+    info: Info
+) -> List[CertificateType]:
+    user = info.context.user
+    if user is None:
+        raise Exception("Not Authenticated")
+
+    if user["role"] not in ["cc", "slo"]:
+        raise Exception("You do not have permission to access this resource.")
+
+
+    certificates = list(certificatesdb.find())    
+
+    if certificates:
+        return [
+        CertificateType.from_pydantic(Certificate.parse_obj(cert))
+        for cert in certificates
+    ]
+    else:
+        return []
 
 @strawberry.field
 def downloadMembersData(
@@ -492,5 +605,10 @@ queries = [
     members,
     currentMembers,
     pendingMembers,
+    getUserCertificates,
+    getPendingCertificates,
+    verifyCertificate,
+    getCertificateByNumber,
+    getAllCertificates,
     downloadMembersData,
 ]

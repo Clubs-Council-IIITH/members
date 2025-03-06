@@ -11,7 +11,7 @@ from strawberry.fastapi import BaseContext
 from strawberry.types import Info as _Info
 from strawberry.types.info import RootValueType
 
-from models import Member, PyObjectId, Roles
+from models import Member, PyObjectId, Roles, Certificate
 
 
 # custom context class
@@ -99,6 +99,9 @@ class FullMemberInput:
 
     poc: Optional[bool] = strawberry.UNSET
 
+@strawberry.input
+class CertificateInput:
+    request_reason: Optional[str] = None
 
 @strawberry.input
 class SimpleMemberInput:
@@ -143,3 +146,22 @@ class MemberCSVResponse:
     csvFile: str
     successMessage: str
     errorMessage: str
+
+@strawberry.experimental.pydantic.type(model=Certificate, all_fields=True)
+class CertificateType:
+    pass
+
+@strawberry.type
+class MembershipType:
+    startYear: int
+    endYear: Optional[int]
+    name: str
+    cid: str
+
+
+@strawberry.input
+class MembershipInput:
+    startYear: int
+    endYear: Optional[int]
+    name: str
+    cid: str
