@@ -38,13 +38,13 @@ class Context(BaseContext):
         return cookies
 
 
-"""custom info Type for user metadata"""
 Info = _Info[Context, RootValueType]
+"""custom info Type for user metadata"""
 
-"""A scalar Type for serializing PyObjectId, used for id field"""
 PyObjectIdType = strawberry.scalar(
     PyObjectId, serialize=str, parse_value=lambda v: PyObjectId(v)
 )
+"""A scalar Type for serializing PyObjectId, used for id field"""
 
 
 # TYPES
@@ -122,6 +122,10 @@ class SimpleClubInput:
 
 @strawberry.input
 class MemberInputDataReportDetails:
+    """
+    Input used to take in search parameters for the member data report
+    """
+
     clubid: List[str] | None
     fields: List[str]
     typeMembers: str
@@ -132,6 +136,10 @@ class MemberInputDataReportDetails:
 
 @strawberry.type
 class MemberCSVResponse:
+    """
+    Type used to return the csv file and the operation message
+    """
+
     csvFile: str
     successMessage: str
     errorMessage: str

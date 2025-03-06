@@ -41,7 +41,7 @@ def member(memberInput: SimpleMemberInput, info: Info) -> MemberType:
         info (Info): Contains the logged in user's details.
 
     Returns:
-        MemberType: Contains the details of the member.
+        (MemberType): Contains the details of the member.
 
     Raises:
         Exception: Not Authenticated
@@ -93,7 +93,7 @@ def memberRoles(uid: str, info: Info) -> List[MemberType]:
         info (Info): Contains the logged in user's details.
 
     Returns:
-        List[MemberType]: Contains a list of member with their current roles.
+        (List[MemberType]): Contains a list of member with their current roles.
 
     Raises:
         Exception: No Member Result/s Found
@@ -148,7 +148,7 @@ def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
         info (Info): Contains the logged in user's details.
 
     Returns:
-        List[MemberType]: Contains a list of members.
+        (List[MemberType]): Contains a list of members.
 
     Raises:
         Exception: No Member Result/s Found
@@ -207,7 +207,7 @@ def currentMembers(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
         info (Info): Contains the logged in user's details.
 
     Returns:
-        List[MemberType]: Contains a list of members.
+        (List[MemberType]): Contains a list of members.
 
     Raises:
         Exception: Not Authenticated
@@ -264,7 +264,7 @@ def pendingMembers(info: Info) -> List[MemberType]:
         info (Info): Contains the logged in user's details.
 
     Returns:
-        List[MemberType]: Contains a list of members.
+        (List[MemberType]): Contains a list of members.
 
     Raises:
         Exception: Not Authenticated
@@ -303,6 +303,22 @@ def pendingMembers(info: Info) -> List[MemberType]:
 def downloadMembersData(
     details: MemberInputDataReportDetails, info: Info
 ) -> MemberCSVResponse:
+    """
+    It returns the data of all members specific to the
+    requested fields like batch and status in a CSV format at once.
+
+    Args:
+        details (MemberInputDataReportDetails): Contains the
+                                                details of the report.
+        info (Info): Contains the logged in user's details.
+
+    Returns:
+        (MemberCSVResponse): Contains the data of all members specific to the
+            requested fields like batch and status in a CSV format.
+
+    Raises:
+        Exception: You do not have permission to access this resource.
+    """
     user = info.context.user
     if user is None:
         raise Exception("You do not have permission to access this resource.")

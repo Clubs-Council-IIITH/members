@@ -18,7 +18,7 @@ def non_deleted_members(member_input) -> MemberType:
         member_input (dict): json serialised FullMemberInput.
 
     Returns:
-        MemberType: Contains the details of the member.
+        (MemberType): Contains the details of the member.
 
     Raises:
         Exception: No such Record
@@ -100,7 +100,7 @@ def getUser(uid, cookies=None) -> dict | None:
         cookies (dict): The cookies of the user. Defaults to None.
 
     Returns:
-        dict: The details of the user.
+        (dict | None): The details of the user.
     """
 
     try:
@@ -133,10 +133,18 @@ def getUser(uid, cookies=None) -> dict | None:
         return None
 
 
-def getUsersByList(uids: list, cookies=None):
+def getUsersByList(uids: list, cookies=None) -> dict | None:
     """
-    Function to get user details in bulk, returns a dict with keys of user uids
+    Query to Users Microservice to get user details in bulk,
+    returns a dict with keys of user uids
     and value of user details
+
+    Args:
+        uids (list): list of uids of the users
+        cookies (dict): The cookies of the user. Defaults to None.
+
+    Returns:
+        (dict | None): keys of user uids and value of user details
     """
     userProfiles = {}
 
@@ -173,9 +181,17 @@ def getUsersByList(uids: list, cookies=None):
         return None
 
 
-def getUsersByBatch(batch: int, cookies=None):
+def getUsersByBatch(batch: int, cookies=None) -> dict | None:
     """
-    Function to get all users in a particular batch
+    Query to Users Microservice to get all
+    users belonging to a particular batch
+
+    Args:
+        batch (int): batch year of the users
+        cookies (dict): The cookies of the user. Defaults to None.
+
+    Returns:
+        (dict | None): keys of user uids and value of user details
     """
     try:
         batchDetails = dict()
@@ -216,7 +232,18 @@ def getUsersByBatch(batch: int, cookies=None):
 def getClubDetails(
     clubid: str,
     cookies,
-) -> dict:
+) -> dict | None:
+    """
+    Query to Clubs Microservice to get club details from club id
+
+    Args:
+        clubid (str): club id
+        cookies (dict): The cookies of the user. Defaults to None.
+
+    Returns:
+        (dict | None): the club details
+    """
+
     try:
         query = """
                     query Club($clubInput: SimpleClubInput!) {
@@ -239,9 +266,15 @@ def getClubDetails(
         return {}
 
 
-def getClubs(cookies=None):
+def getClubs(cookies=None) -> dict | None:
     """
-    Function to call the all clubs query
+    Query to Clubs Microservice to call the all clubs query
+
+    Args:
+        cookies (dict): The cookies of the user. Defaults to None.
+
+    Returns:
+        (dict | None): list of all clubs
     """
     try:
         query = """
