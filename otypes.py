@@ -131,7 +131,20 @@ class MemberInputDataReportDetails:
     typeMembers: str
     typeRoles: str | None
     batchFiltering: List[str]
+    batchFilteringType: List[str] = strawberry.field(
+        default_factory=lambda: ["ug", "pg"]
+    )
     dateRoles: List[int] | None
+
+    def __post_init__(self):
+        if len(self.batchFilteringType) > 2:
+            raise ValueError("Invalid Batch Types added.")
+
+        allowed_values = ["ug", "pg"]
+        if not set(self.batchFilteringType).issubset(allowed_values):
+            raise ValueError(
+                f"batchFilteringType must be a subset of {allowed_values}"
+            )
 
 
 @strawberry.type
