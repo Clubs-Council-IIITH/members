@@ -332,8 +332,8 @@ def downloadMembersData(
         curr_date = datetime.now()
         day = curr_date.day
         month = curr_date.month
-        farewell_time = (month == 2 and day >= 15) or (
-            month == 3 and day <= 15
+        farewell_time = (month == 3 and day >= 15) or (
+            month == 4 and day <= 15
         )
         if not farewell_time:
             details.typeMembers = "current"
