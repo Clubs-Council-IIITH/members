@@ -4,6 +4,7 @@ Query resolvers
 
 import csv
 import io
+from datetime import datetime
 from typing import List
 
 import strawberry
@@ -328,7 +329,14 @@ def downloadMembersData(
     else:
         allClubs = getClubs(info.context.cookies)
         clubList = [club["cid"] for club in allClubs]
-        details.typeMembers = "current"
+        curr_date = datetime.now()
+        day = curr_date.day
+        month = curr_date.month
+        farewell_time = (month == 2 and day >= 15) or (
+            month == 3 and day <= 15
+        )
+        if not farewell_time:
+            details.typeMembers = "current"
 
     results = membersdb.find({"cid": {"$in": clubList}}, {"_id": 0})
 
@@ -371,11 +379,11 @@ def downloadMembersData(
         if len(roles_result) > 0:
             append = False
             result["roles"] = roles_result
-            if details.typeMembers == "current" and currentMember:
+            if details.typeMembers == "all":
+                append = True
+            elif details.typeMembers == "current" and currentMember:
                 append = True
             elif details.typeMembers == "past" and withinTimeframe:
-                append = True
-            elif details.typeMembers == "all":
                 append = True
 
             if "allBatches" not in details.batchFiltering and append:
