@@ -336,9 +336,9 @@ def downloadMembersData(
     if "allBatches" not in details.batchFiltering:
         batchDetails = dict()
         for batch in details.batchFiltering:
-            batchDetails.update(
-                getUsersByBatch(int(batch), info.context.cookies)
-            )
+            batch_users = getUsersByBatch(int(batch), info.context.cookies)
+            if batch_users is not None:
+                batchDetails.update(batch_users)
     userDetailsList = dict()
     userIds = []
     for result in results:
