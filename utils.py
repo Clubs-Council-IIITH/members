@@ -209,7 +209,7 @@ def getUsersByBatch(
                 }
             }
         """  # noqa: E501
-        variable = {"batchYear": batch}
+        variable = {"batchYear": batch, "ug": ug, "pg": pg}
         if cookies:
             request = requests.post(
                 "http://gateway/graphql",
