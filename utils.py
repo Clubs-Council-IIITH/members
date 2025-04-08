@@ -181,7 +181,9 @@ def getUsersByList(uids: list, cookies=None) -> dict | None:
         return None
 
 
-def getUsersByBatch(batch: int, cookies=None) -> dict | None:
+def getUsersByBatch(
+    batch: int, ug: bool = True, pg: bool = True, cookies=None
+) -> dict | None:
     """
     Query to Users Microservice to get all
     users belonging to a particular batch
@@ -196,8 +198,8 @@ def getUsersByBatch(batch: int, cookies=None) -> dict | None:
     try:
         batchDetails = dict()
         query = """
-            query GetUsersByBatch($batchYear: Int!) {
-                usersByBatch(batchYear: $batchYear) {
+            query GetUsersByBatch($batchYear: Int!, $ug: Boolean, $pg: Boolean) {
+                usersByBatch(batchYear: $batchYear, ug: $ug, pg: $pg) {
                     uid
                     firstName
                     lastName
@@ -206,8 +208,8 @@ def getUsersByBatch(batch: int, cookies=None) -> dict | None:
                     email
                 }
             }
-        """
-        variable = {"batchYear": batch}
+        """  # noqa: E501
+        variable = {"batchYear": batch, "ug": ug, "pg": pg}
         if cookies:
             request = requests.post(
                 "http://gateway/graphql",
