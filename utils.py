@@ -1,7 +1,6 @@
 import os
 from datetime import datetime
-
-import requests
+import httpx
 
 from db import membersdb
 from models import Member
@@ -10,7 +9,7 @@ from otypes import MemberType
 inter_communication_secret = os.getenv("INTER_COMMUNICATION_SECRET")
 
 
-def non_deleted_members(member_input) -> MemberType:
+async def non_deleted_members(member_input) -> MemberType:
     """
     Returns a member with his non-deleted roles
 
@@ -24,7 +23,7 @@ def non_deleted_members(member_input) -> MemberType:
         Exception: No such Record
     """
 
-    updated_sample = membersdb.find_one(
+    updated_sample = await membersdb.find_one(
         {
             "$and": [
                 {"cid": member_input["cid"]},
@@ -46,7 +45,7 @@ def non_deleted_members(member_input) -> MemberType:
     return MemberType.from_pydantic(Member.model_validate(updated_sample))
 
 
-def unique_roles_id(uid, cid):
+async def unique_roles_id(uid, cid):
     """
     Generates unique role ids for a member's roles
 
@@ -80,7 +79,7 @@ def unique_roles_id(uid, cid):
             }
         }
     ]
-    membersdb.update_one(
+    await membersdb.update_one(
         {
             "$and": [
                 {"cid": cid},
@@ -91,7 +90,7 @@ def unique_roles_id(uid, cid):
     )
 
 
-def getUser(uid, cookies=None) -> dict | None:
+async def getUser(uid, cookies=None) -> dict | None:
     """
     Query request to the Users microservice to fetch user details.
 
@@ -116,24 +115,25 @@ def getUser(uid, cookies=None) -> dict | None:
             }
         """
         variable = {"userInput": {"uid": uid}}
-        if cookies:
-            request = requests.post(
-                "http://gateway/graphql",
-                json={"query": query, "variables": variable},
-                cookies=cookies,
-            )
-        else:
-            request = requests.post(
-                "http://gateway/graphql",
-                json={"query": query, "variables": variable},
-            )
+        async with httpx.AsyncClient() as client:
+            if cookies:
+                request = await client.post(
+                    "http://gateway/graphql",
+                    json={"query": query, "variables": variable},
+                    cookies=cookies,
+                )
+            else:
+                request = await client.post(
+                    "http://gateway/graphql",
+                    json={"query": query, "variables": variable},
+                )
 
         return request.json()["data"]["userProfile"]
     except Exception:
         return None
 
 
-def getUsersByList(uids: list, cookies=None) -> dict | None:
+async def getUsersByList(uids: list, cookies=None) -> dict | None:
     """
     Query to Users Microservice to get user details in bulk,
     returns a dict with keys of user uids
@@ -161,18 +161,18 @@ def getUsersByList(uids: list, cookies=None) -> dict | None:
             }
         """
         variable = {"userInputs": [{"uid": uid} for uid in uids]}
-        if cookies:
-            request = requests.post(
-                "http://gateway/graphql",
-                json={"query": query, "variables": variable},
-                cookies=cookies,
-            )
-        else:
-            request = requests.post(
-                "http://gateway/graphql",
-                json={"query": query, "variables": variable},
-            )
-
+        async with httpx.AsyncClient() as client:
+            if cookies:
+                request = await client.post(
+                    "http://gateway/graphql",
+                    json={"query": query, "variables": variable},
+                    cookies=cookies,
+                )
+            else:
+                request = await client.post(
+                    "http://gateway/graphql",
+                    json={"query": query, "variables": variable},
+                )
         for i in range(len(uids)):
             userProfiles[uids[i]] = request.json()["data"]["usersByList"][i]
 
@@ -181,7 +181,7 @@ def getUsersByList(uids: list, cookies=None) -> dict | None:
         return None
 
 
-def getUsersByBatch(
+async def getUsersByBatch(
     batch: int, ug: bool = True, pg: bool = True, cookies=None
 ) -> dict | None:
     """
@@ -210,18 +210,18 @@ def getUsersByBatch(
             }
         """  # noqa: E501
         variable = {"batchYear": batch, "ug": ug, "pg": pg}
-        if cookies:
-            request = requests.post(
-                "http://gateway/graphql",
-                json={"query": query, "variables": variable},
-                cookies=cookies,
-            )
-        else:
-            request = requests.post(
-                "http://gateway/graphql",
-                json={"query": query, "variables": variable},
-            )
-
+        async with httpx.AsyncClient() as client:
+            if cookies:
+                request = await client.post(
+                    "http://gateway/graphql",
+                    json={"query": query, "variables": variable},
+                    cookies=cookies,
+                )
+            else:
+                request = await client.post(
+                    "http://gateway/graphql",
+                    json={"query": query, "variables": variable},
+                )
         for result in request.json()["data"]["usersByBatch"]:
             batchDetails[result["uid"]] = result
 
@@ -231,7 +231,7 @@ def getUsersByBatch(
 
 
 # get club name from club id
-def getClubDetails(
+async def getClubDetails(
     clubid: str,
     cookies,
 ) -> dict | None:
@@ -258,17 +258,18 @@ def getClubDetails(
                     }
                 """
         variable = {"clubInput": {"cid": clubid}}
-        request = requests.post(
-            "http://gateway/graphql",
-            json={"query": query, "variables": variable},
-            cookies=cookies,
-        )
+        async with httpx.AsyncClient() as client:
+            request = await client.post(
+                "http://gateway/graphql",
+                json={"query": query, "variables": variable},
+                cookies=cookies,
+            )
         return request.json()["data"]["club"]
     except Exception:
         return {}
 
 
-def getClubs(cookies=None) -> dict | None:
+async def getClubs(cookies=None) -> dict | None:
     """
     Query to Clubs Microservice to call the all clubs query
 
@@ -289,16 +290,17 @@ def getClubs(cookies=None) -> dict | None:
                         }
                     }
                 """
-        if cookies:
-            request = requests.post(
-                "http://gateway/graphql",
-                json={"query": query},
-                cookies=cookies,
-            )
-        else:
-            request = requests.post(
-                "http://gateway/graphql", json={"query": query}
-            )
+        async with httpx.AsyncClient() as client:
+            if cookies:
+                request = await client.post(
+                    "http://gateway/graphql",
+                    json={"query": query},
+                    cookies=cookies,
+                )
+            else:
+                request = await client.post(
+                    "http://gateway/graphql", json={"query": query}
+                )
         return request.json()["data"]["allClubs"]
     except Exception:
         return []

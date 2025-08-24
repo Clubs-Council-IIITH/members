@@ -13,12 +13,14 @@ Attributes:
     app (FastAPI): The FastAPI application instance.
 """
 
+from contextlib import asynccontextmanager
 from os import getenv
 
 import strawberry
 from fastapi import FastAPI
 from strawberry.fastapi import GraphQLRouter
 from strawberry.tools import create_type
+from db import create_index
 
 # override PyObjectId and Context scalars
 from models import PyObjectId
@@ -51,11 +53,17 @@ schema = strawberry.federation.Schema(
 # check whether running in debug mode
 DEBUG = getenv("GLOBAL_DEBUG", "False").lower() in ("true", "1", "t")
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await create_index()
+    yield
+
 # serve API with FastAPI router
 gql_app = GraphQLRouter(schema, graphiql=True, context_getter=get_context)
 app = FastAPI(
     debug=DEBUG,
     title="CC Members Microservice",
     desciption="Handles Data of Members",
+    lifespan=lifespan,
 )
 app.include_router(gql_app, prefix="/graphql")
