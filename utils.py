@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-import httpx
+from httpx import AsyncClient
 
 from db import membersdb
 from models import Member
@@ -114,21 +114,13 @@ async def getUser(uid, cookies=None) -> dict | None:
                 }
             }
         """
-        variable = {"userInput": {"uid": uid}}
-        async with httpx.AsyncClient() as client:
-            if cookies:
-                request = await client.post(
-                    "http://gateway/graphql",
-                    json={"query": query, "variables": variable},
-                    cookies=cookies,
-                )
-            else:
-                request = await client.post(
-                    "http://gateway/graphql",
-                    json={"query": query, "variables": variable},
-                )
-
-        return request.json()["data"]["userProfile"]
+        variables = {"userInput": {"uid": uid}}
+        async with AsyncClient(cookies=cookies) as client:
+            result = await client.post(
+                "http://gateway/graphql",
+                json={"query": query, "variables": variables},
+            )
+        return result.json()["data"]["userProfile"]
     except Exception:
         return None
 
@@ -160,22 +152,15 @@ async def getUsersByList(uids: list, cookies=None) -> dict | None:
                 }
             }
         """
-        variable = {"userInputs": [{"uid": uid} for uid in uids]}
-        async with httpx.AsyncClient() as client:
-            if cookies:
-                request = await client.post(
-                    "http://gateway/graphql",
-                    json={"query": query, "variables": variable},
-                    cookies=cookies,
-                )
-            else:
-                request = await client.post(
-                    "http://gateway/graphql",
-                    json={"query": query, "variables": variable},
-                )
+        variables = {"userInputs": [{"uid": uid} for uid in uids]}
+        async with AsyncClient(cookies=cookies) as client:
+            result = await client.post(
+                "http://gateway/graphql",
+                json={"query": query, "variables": variables},
+            )
         for i in range(len(uids)):
-            userProfiles[uids[i]] = request.json()["data"]["usersByList"][i]
-
+            userProfiles[uids[i]] = result.json()["data"]["usersByList"][i]
+            
         return userProfiles
     except Exception:
         return None
@@ -209,22 +194,14 @@ async def getUsersByBatch(
                 }
             }
         """  # noqa: E501
-        variable = {"batchYear": batch, "ug": ug, "pg": pg}
-        async with httpx.AsyncClient() as client:
-            if cookies:
-                request = await client.post(
-                    "http://gateway/graphql",
-                    json={"query": query, "variables": variable},
-                    cookies=cookies,
-                )
-            else:
-                request = await client.post(
-                    "http://gateway/graphql",
-                    json={"query": query, "variables": variable},
-                )
-        for result in request.json()["data"]["usersByBatch"]:
-            batchDetails[result["uid"]] = result
-
+        variables = {"batchYear": batch, "ug": ug, "pg": pg}
+        async with AsyncClient(cookies=cookies) as client:
+            result = await client.post(
+                "http://gateway/graphql",
+                json={"query": query, "variables": variables},
+            )
+        for user in result.json()["data"]["usersByBatch"]:
+            batchDetails[user["uid"]] = user
         return batchDetails
     except Exception:
         return dict()
@@ -248,28 +225,27 @@ async def getClubDetails(
 
     try:
         query = """
-                    query Club($clubInput: SimpleClubInput!) {
-                        club(clubInput: $clubInput) {
-                            cid
-                            name
-                            email
-                            category
-                        }
-                    }
-                """
-        variable = {"clubInput": {"cid": clubid}}
-        async with httpx.AsyncClient() as client:
-            request = await client.post(
+            query Club($clubInput: SimpleClubInput!) {
+                club(clubInput: $clubInput) {
+                    cid
+                    name
+                    email
+                    category
+                }
+            }
+        """
+        variables = {"clubInput": {"cid": clubid}}
+        async with AsyncClient(cookies=cookies) as client:
+            result = await client.post(
                 "http://gateway/graphql",
-                json={"query": query, "variables": variable},
-                cookies=cookies,
+                json={"query": query, "variables": variables},
             )
-        return request.json()["data"]["club"]
+        return result.json()["data"]["club"]
     except Exception:
         return {}
 
 
-async def getClubs(cookies=None) -> dict | None:
+async def getClubs(cookies=None) -> list:
     """
     Query to Clubs Microservice to call the all clubs query
 
@@ -281,26 +257,20 @@ async def getClubs(cookies=None) -> dict | None:
     """
     try:
         query = """
-                    query AllClubs {
-                        allClubs {
-                            cid
-                            name
-                            code
-                            email
-                        }
-                    }
-                """
-        async with httpx.AsyncClient() as client:
-            if cookies:
-                request = await client.post(
-                    "http://gateway/graphql",
-                    json={"query": query},
-                    cookies=cookies,
-                )
-            else:
-                request = await client.post(
-                    "http://gateway/graphql", json={"query": query}
-                )
-        return request.json()["data"]["allClubs"]
+            query AllClubs {
+                allClubs {
+                    cid
+                    name
+                    code
+                    email
+                }
+            }
+        """
+        async with AsyncClient(cookies=cookies) as client:
+            result = await client.post(
+                "http://gateway/graphql",
+                json={"query": query},
+            )
+        return result.json()["data"]["allClubs"]
     except Exception:
         return []
