@@ -158,7 +158,12 @@ async def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
     club_input = jsonable_encoder(clubInput)
 
     if role not in ["cc"] or club_input["cid"] != "clubs":
-        results = [doc async for doc in membersdb.find({"cid": club_input["cid"]}, {"_id": 0})]
+        results = [
+            doc
+            async for doc in membersdb.find(
+                {"cid": club_input["cid"]}, {"_id": 0}
+            )
+        ]
     else:
         results = [doc async for doc in membersdb.find({}, {"_id": 0})]
 
@@ -192,7 +197,9 @@ async def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
 
 
 @strawberry.field
-async def currentMembers(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
+async def currentMembers(
+    clubInput: SimpleClubInput, info: Info
+) -> List[MemberType]:
     """
     Returns the current members of a club with their non-deleted,
     approved roles, for Public.
@@ -222,7 +229,12 @@ async def currentMembers(clubInput: SimpleClubInput, info: Info) -> List[MemberT
             raise Exception("Not Authenticated")
         results = [doc async for doc in membersdb.find({}, {"_id": 0})]
     else:
-        results = [doc async for doc in membersdb.find({"cid": club_input["cid"]}, {"_id": 0})]
+        results = [
+            doc
+            async for doc in membersdb.find(
+                {"cid": club_input["cid"]}, {"_id": 0}
+            )
+        ]
 
     if results:
         members = []
@@ -331,7 +343,10 @@ async def downloadMembersData(
         if not farewell_time:
             details.typeMembers = "current"
 
-    results = [doc async for doc in membersdb.find({"cid": {"$in": clubList}}, {"_id": 0})]
+    results = [
+        doc
+        async for doc in membersdb.find({"cid": {"$in": clubList}}, {"_id": 0})
+    ]
 
     allMembers = []
     if "allBatches" not in details.batchFiltering:
@@ -432,9 +447,9 @@ async def downloadMembersData(
         if userDetails is None:
             continue
         if clubNames.get(member["cid"]) is None:
-            clubNames[member["cid"]] = (await getClubDetails(
-                member["cid"], info.context.cookies
-            ))["name"]
+            clubNames[member["cid"]] = (
+                await getClubDetails(member["cid"], info.context.cookies)
+            )["name"]
 
         clubName = clubNames.get(member["cid"])
 

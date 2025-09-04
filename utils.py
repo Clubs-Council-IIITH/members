@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+
 from httpx import AsyncClient
 
 from db import membersdb
@@ -160,7 +161,7 @@ async def getUsersByList(uids: list, cookies=None) -> dict | None:
             )
         for i in range(len(uids)):
             userProfiles[uids[i]] = result.json()["data"]["usersByList"][i]
-            
+
         return userProfiles
     except Exception:
         return None

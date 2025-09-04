@@ -224,7 +224,9 @@ async def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
 
 
 @strawberry.mutation
-async def deleteMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
+async def deleteMember(
+    memberInput: SimpleMemberInput, info: Info
+) -> MemberType:
     """
     Mutation resolver to delete a member or member's role by club or CC
 
@@ -301,7 +303,9 @@ async def deleteMember(memberInput: SimpleMemberInput, info: Info) -> MemberType
 
 
 @strawberry.mutation
-async def approveMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
+async def approveMember(
+    memberInput: SimpleMemberInput, info: Info
+) -> MemberType:
     """
     Mutation resolver to approve a member's role by CC
 
@@ -373,7 +377,9 @@ async def approveMember(memberInput: SimpleMemberInput, info: Info) -> MemberTyp
 
 
 @strawberry.mutation
-async def rejectMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
+async def rejectMember(
+    memberInput: SimpleMemberInput, info: Info
+) -> MemberType:
     """
     Mutation resolver to reject a member's role by CC
 
