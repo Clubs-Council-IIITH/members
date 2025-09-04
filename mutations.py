@@ -21,7 +21,7 @@ ist = pytz.timezone("Asia/Kolkata")
 
 
 @strawberry.mutation
-def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
+async def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     """
     Mutation resolver to create a new member by a club or CC
 
@@ -54,7 +54,7 @@ def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     ] != "cc":
         raise Exception("Not Authenticated to access this API")
 
-    if membersdb.find_one(
+    if await membersdb.find_one(
         {
             "$and": [
                 {"cid": member_input["cid"]},
@@ -65,7 +65,7 @@ def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
         raise Exception("A record with same uid and cid already exists")
 
     # Check whether this uid is valid or not
-    userMember = getUser(member_input["uid"], info.context.cookies)
+    userMember = await getUser(member_input["uid"], info.context.cookies)
     if userMember is None:
         raise Exception("Invalid User ID")
 
@@ -99,19 +99,18 @@ def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     member_input["creation_time"] = time_str
     member_input["last_edited_time"] = time_str
 
-    # DB STUFF
-    created_id = membersdb.insert_one(member_input).inserted_id
-    unique_roles_id(member_input["uid"], member_input["cid"])
+    created_id = (await membersdb.insert_one(member_input)).inserted_id
+    await unique_roles_id(member_input["uid"], member_input["cid"])
 
     created_sample = Member.model_validate(
-        membersdb.find_one({"_id": created_id}, {"_id": 0})
+        await membersdb.find_one({"_id": created_id}, {"_id": 0})
     )
 
     return MemberType.from_pydantic(created_sample)
 
 
 @strawberry.mutation
-def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
+async def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     """
     Mutation resolver to edit a member by club and CC
 
@@ -149,7 +148,7 @@ def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
         if i["end_year"] and i["start_year"] > i["end_year"]:
             raise Exception("Start year cannot be greater than end year")
 
-    member_ref = membersdb.find_one(
+    member_ref = await membersdb.find_one(
         {
             "$and": [
                 {"cid": member_input["cid"]},
@@ -203,7 +202,7 @@ def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
         roles.append(role_new)
 
     # DB STUFF
-    membersdb.update_one(
+    await membersdb.update_one(
         {
             "$and": [
                 {"cid": member_input["cid"]},
@@ -219,13 +218,13 @@ def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
         },
     )
 
-    unique_roles_id(member_input["uid"], member_input["cid"])
+    await unique_roles_id(member_input["uid"], member_input["cid"])
 
-    return non_deleted_members(member_input)
+    return await non_deleted_members(member_input)
 
 
 @strawberry.mutation
-def deleteMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
+async def deleteMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     """
     Mutation resolver to delete a member or member's role by club or CC
 
@@ -255,7 +254,7 @@ def deleteMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     ] != "cc":
         raise Exception("Not Authenticated to access this API")
 
-    existing_data = membersdb.find_one(
+    existing_data = await membersdb.find_one(
         {
             "$and": [
                 {"cid": member_input["cid"]},
@@ -268,7 +267,7 @@ def deleteMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
         raise Exception("No such Record")
 
     if "rid" not in member_input or not member_input["rid"]:
-        membersdb.delete_one(
+        await membersdb.delete_one(
             {
                 "$and": [
                     {"cid": member_input["cid"]},
@@ -286,7 +285,7 @@ def deleteMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
         roles.append(i)
 
     # DB STUFF
-    membersdb.update_one(
+    await membersdb.update_one(
         {
             "$and": [
                 {"cid": member_input["cid"]},
@@ -296,13 +295,13 @@ def deleteMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
         {"$set": {"roles": roles}},
     )
 
-    unique_roles_id(member_input["uid"], member_input["cid"])
+    await unique_roles_id(member_input["uid"], member_input["cid"])
 
-    return non_deleted_members(member_input)
+    return await non_deleted_members(member_input)
 
 
 @strawberry.mutation
-def approveMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
+async def approveMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     """
     Mutation resolver to approve a member's role by CC
 
@@ -329,7 +328,7 @@ def approveMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     if user["role"] != "cc":
         raise Exception("Not Authenticated to access this API")
 
-    existing_data = membersdb.find_one(
+    existing_data = await membersdb.find_one(
         {
             "$and": [
                 {"cid": member_input["cid"]},
@@ -358,7 +357,7 @@ def approveMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
         roles.append(i)
 
     # DB STUFF
-    membersdb.update_one(
+    await membersdb.update_one(
         {
             "$and": [
                 {"cid": member_input["cid"]},
@@ -368,13 +367,13 @@ def approveMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
         {"$set": {"roles": roles}},
     )
 
-    unique_roles_id(member_input["uid"], member_input["cid"])
+    await unique_roles_id(member_input["uid"], member_input["cid"])
 
-    return non_deleted_members(member_input)
+    return await non_deleted_members(member_input)
 
 
 @strawberry.mutation
-def rejectMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
+async def rejectMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     """
     Mutation resolver to reject a member's role by CC
 
@@ -401,7 +400,7 @@ def rejectMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     if user["role"] != "cc":
         raise Exception("Not Authenticated to access this API")
 
-    existing_data = membersdb.find_one(
+    existing_data = await membersdb.find_one(
         {
             "$and": [
                 {"cid": member_input["cid"]},
@@ -429,7 +428,7 @@ def rejectMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
         roles.append(i)
 
     # DB STUFF
-    membersdb.update_one(
+    await membersdb.update_one(
         {
             "$and": [
                 {"cid": member_input["cid"]},
@@ -439,9 +438,9 @@ def rejectMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
         {"$set": {"roles": roles}},
     )
 
-    unique_roles_id(member_input["uid"], member_input["cid"])
+    await unique_roles_id(member_input["uid"], member_input["cid"])
 
-    return non_deleted_members(member_input)
+    return await non_deleted_members(member_input)
 
 
 # @strawberry.mutation
@@ -476,7 +475,7 @@ def rejectMember(memberInput: SimpleMemberInput, info: Info) -> MemberType:
 
 
 @strawberry.mutation
-def updateMembersCid(
+async def updateMembersCid(
     info: Info,
     old_cid: str,
     new_cid: str,
@@ -514,7 +513,7 @@ def updateMembersCid(
         }
     }
 
-    upd_ref = membersdb.update_many({"cid": old_cid}, updation)
+    upd_ref = await membersdb.update_many({"cid": old_cid}, updation)
     return upd_ref.modified_count
 
 

@@ -19,7 +19,7 @@ Attributes:
 
 from os import getenv
 
-from pymongo import MongoClient
+from pymongo import AsyncMongoClient
 
 # get mongodb URI and database name from environment variale
 MONGO_URI = "mongodb://{}:{}@mongo:{}/".format(
@@ -29,24 +29,22 @@ MONGO_URI = "mongodb://{}:{}@mongo:{}/".format(
 )
 MONGO_DATABASE = getenv("MONGO_DATABASE", default="default")
 
-# instantiate mongo client
-client = MongoClient(MONGO_URI)
-
 # get database
+client = AsyncMongoClient(MONGO_URI)
 db = client[MONGO_DATABASE]
 membersdb = db.members
 
-try:
-    # check if the members index exists
-    if "unique_members" in membersdb.index_information():
-        print("The members index exists.")
-    else:
-        # create the index
-        membersdb.create_index(
-            [("cid", 1), ("uid", 1)], unique=True, name="unique_members"
-        )
-        print("The members index was created.")
 
-    print(membersdb.index_information())
-except Exception:
-    pass
+async def create_index():
+    try:
+        indexes = await membersdb.index_information()
+        if "unique_members" in indexes:
+            print("The members index exists.")
+        else:
+            await membersdb.create_index(
+                [("cid", 1), ("uid", 1)], unique=True, name="unique_members"
+            )
+            print("The members index was created.")
+        print(await membersdb.index_information())
+    except Exception:
+        pass

@@ -31,7 +31,7 @@ from utils import (
 
 
 @strawberry.field
-def member(memberInput: SimpleMemberInput, info: Info) -> MemberType:
+async def member(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     """
     Fetches details of a club member using the cid and uid given,
     for club and CC
@@ -62,7 +62,7 @@ def member(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     ] != "cc":
         raise Exception("Not Authenticated to access this API")
 
-    member = membersdb.find_one(
+    member = await membersdb.find_one(
         {
             "$and": [
                 {"cid": member_input["cid"]},
@@ -78,7 +78,7 @@ def member(memberInput: SimpleMemberInput, info: Info) -> MemberType:
 
 
 @strawberry.field
-def memberRoles(uid: str, info: Info) -> List[MemberType]:
+async def memberRoles(uid: str, info: Info) -> List[MemberType]:
     """
     Fetches a club memeber along with his roles
 
@@ -106,35 +106,29 @@ def memberRoles(uid: str, info: Info) -> List[MemberType]:
     else:
         role = user["role"]
 
-    results = membersdb.find({"uid": uid}, {"_id": 0})
+    result = await membersdb.find_one({"uid": uid}, {"_id": 0})
 
-    if not results:
+    if not result:
         raise Exception("No Member Result/s Found")
 
-    members = []
-    for result in results:
-        roles = result["roles"]
-        roles_result = []
+    roles = result["roles"]
+    roles_result = []
+    for i in roles:
+        if i["deleted"]:
+            continue
+        if role != "cc" and not i["approved"]:
+            continue
+        roles_result.append(i)
 
-        for i in roles:
-            if i["deleted"] is True:
-                continue
-            if role != "cc":
-                if i["approved"] is False:
-                    continue
-            roles_result.append(i)
-
-        if len(roles_result) > 0:
-            result["roles"] = roles_result
-            members.append(
-                MemberType.from_pydantic(Member.model_validate(result))
-            )
-
-    return members
+    if roles_result:
+        result["roles"] = roles_result
+        return [MemberType.from_pydantic(Member.model_validate(result))]
+    else:
+        raise Exception("No Member Result/s Found")
 
 
 @strawberry.field
-def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
+async def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
     """
     Returns all the members of a club.
 
@@ -164,9 +158,9 @@ def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
     club_input = jsonable_encoder(clubInput)
 
     if role not in ["cc"] or club_input["cid"] != "clubs":
-        results = membersdb.find({"cid": club_input["cid"]}, {"_id": 0})
+        results = [doc async for doc in membersdb.find({"cid": club_input["cid"]}, {"_id": 0})]
     else:
-        results = membersdb.find({}, {"_id": 0})
+        results = [doc async for doc in membersdb.find({}, {"_id": 0})]
 
     if results:
         members = []
@@ -198,7 +192,7 @@ def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
 
 
 @strawberry.field
-def currentMembers(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
+async def currentMembers(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
     """
     Returns the current members of a club with their non-deleted,
     approved roles, for Public.
@@ -226,10 +220,9 @@ def currentMembers(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
     if club_input["cid"] == "clubs":
         if role != "cc":
             raise Exception("Not Authenticated")
-
-        results = membersdb.find({}, {"_id": 0})
+        results = [doc async for doc in membersdb.find({}, {"_id": 0})]
     else:
-        results = membersdb.find({"cid": club_input["cid"]}, {"_id": 0})
+        results = [doc async for doc in membersdb.find({"cid": club_input["cid"]}, {"_id": 0})]
 
     if results:
         members = []
@@ -256,7 +249,7 @@ def currentMembers(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
 
 
 @strawberry.field
-def pendingMembers(info: Info) -> List[MemberType]:
+async def pendingMembers(info: Info) -> List[MemberType]:
     """
     Returns the pending members of all clubs with their non-deleted,
     pending roles for CC.
@@ -276,7 +269,7 @@ def pendingMembers(info: Info) -> List[MemberType]:
     if user is None or user["role"] not in ["cc"]:
         raise Exception("Not Authenticated")
 
-    results = membersdb.find({}, {"_id": 0})
+    results = [doc async for doc in membersdb.find({}, {"_id": 0})]
 
     if results:
         members = []
@@ -301,7 +294,7 @@ def pendingMembers(info: Info) -> List[MemberType]:
 
 
 @strawberry.field
-def downloadMembersData(
+async def downloadMembersData(
     details: MemberInputDataReportDetails, info: Info
 ) -> MemberCSVResponse:
     """
@@ -327,7 +320,7 @@ def downloadMembersData(
     if "allclubs" not in details.clubid:
         clubList = details.clubid
     else:
-        allClubs = getClubs(info.context.cookies)
+        allClubs = await getClubs(info.context.cookies)
         clubList = [club["cid"] for club in allClubs]
         curr_date = datetime.now()
         day = curr_date.day
@@ -338,7 +331,7 @@ def downloadMembersData(
         if not farewell_time:
             details.typeMembers = "current"
 
-    results = membersdb.find({"cid": {"$in": clubList}}, {"_id": 0})
+    results = [doc async for doc in membersdb.find({"cid": {"$in": clubList}}, {"_id": 0})]
 
     allMembers = []
     if "allBatches" not in details.batchFiltering:
@@ -347,7 +340,7 @@ def downloadMembersData(
 
         batchDetails = dict()
         for batch in details.batchFiltering:
-            batch_users = getUsersByBatch(
+            batch_users = await getUsersByBatch(
                 int(batch), ug, pg, info.context.cookies
             )
             if batch_users is not None:
@@ -404,7 +397,7 @@ def downloadMembersData(
 
     # Get details of all members
     if "allBatches" in details.batchFiltering:
-        userDetailsList = getUsersByList(userIds, info.context.cookies)
+        userDetailsList = await getUsersByList(userIds, info.context.cookies)
 
     headerMapping = {
         "clubid": "Club Name",
@@ -439,9 +432,9 @@ def downloadMembersData(
         if userDetails is None:
             continue
         if clubNames.get(member["cid"]) is None:
-            clubNames[member["cid"]] = getClubDetails(
+            clubNames[member["cid"]] = (await getClubDetails(
                 member["cid"], info.context.cookies
-            )["name"]
+            ))["name"]
 
         clubName = clubNames.get(member["cid"])
 

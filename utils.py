@@ -1,7 +1,6 @@
 import os
 from datetime import datetime
-
-import requests
+from httpx import AsyncClient
 
 from db import membersdb
 from models import Member
@@ -10,7 +9,7 @@ from otypes import MemberType
 inter_communication_secret = os.getenv("INTER_COMMUNICATION_SECRET")
 
 
-def non_deleted_members(member_input) -> MemberType:
+async def non_deleted_members(member_input) -> MemberType:
     """
     Returns a member with his non-deleted roles
 
@@ -24,7 +23,7 @@ def non_deleted_members(member_input) -> MemberType:
         Exception: No such Record
     """
 
-    updated_sample = membersdb.find_one(
+    updated_sample = await membersdb.find_one(
         {
             "$and": [
                 {"cid": member_input["cid"]},
@@ -46,7 +45,7 @@ def non_deleted_members(member_input) -> MemberType:
     return MemberType.from_pydantic(Member.model_validate(updated_sample))
 
 
-def unique_roles_id(uid, cid):
+async def unique_roles_id(uid, cid):
     """
     Generates unique role ids for a member's roles
 
@@ -80,7 +79,7 @@ def unique_roles_id(uid, cid):
             }
         }
     ]
-    membersdb.update_one(
+    await membersdb.update_one(
         {
             "$and": [
                 {"cid": cid},
@@ -91,7 +90,7 @@ def unique_roles_id(uid, cid):
     )
 
 
-def getUser(uid, cookies=None) -> dict | None:
+async def getUser(uid, cookies=None) -> dict | None:
     """
     Query request to the Users microservice to fetch user details.
 
@@ -115,25 +114,18 @@ def getUser(uid, cookies=None) -> dict | None:
                 }
             }
         """
-        variable = {"userInput": {"uid": uid}}
-        if cookies:
-            request = requests.post(
+        variables = {"userInput": {"uid": uid}}
+        async with AsyncClient(cookies=cookies) as client:
+            result = await client.post(
                 "http://gateway/graphql",
-                json={"query": query, "variables": variable},
-                cookies=cookies,
+                json={"query": query, "variables": variables},
             )
-        else:
-            request = requests.post(
-                "http://gateway/graphql",
-                json={"query": query, "variables": variable},
-            )
-
-        return request.json()["data"]["userProfile"]
+        return result.json()["data"]["userProfile"]
     except Exception:
         return None
 
 
-def getUsersByList(uids: list, cookies=None) -> dict | None:
+async def getUsersByList(uids: list, cookies=None) -> dict | None:
     """
     Query to Users Microservice to get user details in bulk,
     returns a dict with keys of user uids
@@ -160,28 +152,21 @@ def getUsersByList(uids: list, cookies=None) -> dict | None:
                 }
             }
         """
-        variable = {"userInputs": [{"uid": uid} for uid in uids]}
-        if cookies:
-            request = requests.post(
+        variables = {"userInputs": [{"uid": uid} for uid in uids]}
+        async with AsyncClient(cookies=cookies) as client:
+            result = await client.post(
                 "http://gateway/graphql",
-                json={"query": query, "variables": variable},
-                cookies=cookies,
+                json={"query": query, "variables": variables},
             )
-        else:
-            request = requests.post(
-                "http://gateway/graphql",
-                json={"query": query, "variables": variable},
-            )
-
         for i in range(len(uids)):
-            userProfiles[uids[i]] = request.json()["data"]["usersByList"][i]
-
+            userProfiles[uids[i]] = result.json()["data"]["usersByList"][i]
+            
         return userProfiles
     except Exception:
         return None
 
 
-def getUsersByBatch(
+async def getUsersByBatch(
     batch: int, ug: bool = True, pg: bool = True, cookies=None
 ) -> dict | None:
     """
@@ -209,29 +194,21 @@ def getUsersByBatch(
                 }
             }
         """  # noqa: E501
-        variable = {"batchYear": batch, "ug": ug, "pg": pg}
-        if cookies:
-            request = requests.post(
+        variables = {"batchYear": batch, "ug": ug, "pg": pg}
+        async with AsyncClient(cookies=cookies) as client:
+            result = await client.post(
                 "http://gateway/graphql",
-                json={"query": query, "variables": variable},
-                cookies=cookies,
+                json={"query": query, "variables": variables},
             )
-        else:
-            request = requests.post(
-                "http://gateway/graphql",
-                json={"query": query, "variables": variable},
-            )
-
-        for result in request.json()["data"]["usersByBatch"]:
-            batchDetails[result["uid"]] = result
-
+        for user in result.json()["data"]["usersByBatch"]:
+            batchDetails[user["uid"]] = user
         return batchDetails
     except Exception:
         return dict()
 
 
 # get club name from club id
-def getClubDetails(
+async def getClubDetails(
     clubid: str,
     cookies,
 ) -> dict | None:
@@ -248,27 +225,27 @@ def getClubDetails(
 
     try:
         query = """
-                    query Club($clubInput: SimpleClubInput!) {
-                        club(clubInput: $clubInput) {
-                            cid
-                            name
-                            email
-                            category
-                        }
-                    }
-                """
-        variable = {"clubInput": {"cid": clubid}}
-        request = requests.post(
-            "http://gateway/graphql",
-            json={"query": query, "variables": variable},
-            cookies=cookies,
-        )
-        return request.json()["data"]["club"]
+            query Club($clubInput: SimpleClubInput!) {
+                club(clubInput: $clubInput) {
+                    cid
+                    name
+                    email
+                    category
+                }
+            }
+        """
+        variables = {"clubInput": {"cid": clubid}}
+        async with AsyncClient(cookies=cookies) as client:
+            result = await client.post(
+                "http://gateway/graphql",
+                json={"query": query, "variables": variables},
+            )
+        return result.json()["data"]["club"]
     except Exception:
         return {}
 
 
-def getClubs(cookies=None) -> dict | None:
+async def getClubs(cookies=None) -> list:
     """
     Query to Clubs Microservice to call the all clubs query
 
@@ -280,25 +257,20 @@ def getClubs(cookies=None) -> dict | None:
     """
     try:
         query = """
-                    query AllClubs {
-                        allClubs {
-                            cid
-                            name
-                            code
-                            email
-                        }
-                    }
-                """
-        if cookies:
-            request = requests.post(
+            query AllClubs {
+                allClubs {
+                    cid
+                    name
+                    code
+                    email
+                }
+            }
+        """
+        async with AsyncClient(cookies=cookies) as client:
+            result = await client.post(
                 "http://gateway/graphql",
                 json={"query": query},
-                cookies=cookies,
             )
-        else:
-            request = requests.post(
-                "http://gateway/graphql", json={"query": query}
-            )
-        return request.json()["data"]["allClubs"]
+        return result.json()["data"]["allClubs"]
     except Exception:
         return []
