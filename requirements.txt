@@ -1,12 +1,6 @@
 fastapi==0.116.1
-greenlet==3.2.4
 httpx==0.28.1
-libcst==1.8.2
-msgpack==1.1.1
-mypy-extensions==1.1.0
-platformdirs==4.4.0
 pymongo==4.14.1
 pytz>=2025.2
 strawberry-graphql[debug-server]==0.281.0
-typer==0.17.4
 uvicorn==0.35.0
