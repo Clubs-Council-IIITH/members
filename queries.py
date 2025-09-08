@@ -106,25 +106,25 @@ async def memberRoles(uid: str, info: Info) -> List[MemberType]:
     else:
         role = user["role"]
 
-    result = await membersdb.find_one({"uid": uid}, {"_id": 0})
+    results = [
+        doc async for doc in membersdb.find({"uid": uid}, {"_id": 0})
+    ]
 
-    if not result:
-        raise Exception("No Member Result/s Found")
+    members = []
+    for result in results:
+        roles = result["roles"]
+        roles_result = []
+        for i in roles:
+            if i["deleted"]:
+                continue
+            if role != "cc" and not i["approved"]:
+                continue
+            roles_result.append(i)
+        if roles_result:
+            result["roles"] = roles_result
+            members.append(MemberType.from_pydantic(Member.model_validate(result)))
 
-    roles = result["roles"]
-    roles_result = []
-    for i in roles:
-        if i["deleted"]:
-            continue
-        if role != "cc" and not i["approved"]:
-            continue
-        roles_result.append(i)
-
-    if roles_result:
-        result["roles"] = roles_result
-        return [MemberType.from_pydantic(Member.model_validate(result))]
-    else:
-        raise Exception("No Member Result/s Found")
+    return members
 
 
 @strawberry.field
