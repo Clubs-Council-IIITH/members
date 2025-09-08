@@ -95,9 +95,6 @@ async def memberRoles(uid: str, info: Info) -> List[MemberType]:
 
     Returns:
         (List[MemberType]): Contains a list of member with their current roles.
-
-    Raises:
-        Exception: No Member Result/s Found
     """
 
     user = info.context.user
@@ -106,25 +103,25 @@ async def memberRoles(uid: str, info: Info) -> List[MemberType]:
     else:
         role = user["role"]
 
-    result = await membersdb.find_one({"uid": uid}, {"_id": 0})
+    results = [
+        doc async for doc in membersdb.find({"uid": uid}, {"_id": 0})
+    ]
 
-    if not result:
-        raise Exception("No Member Result/s Found")
+    members = []
+    for result in results:
+        roles = result["roles"]
+        roles_result = []
+        for i in roles:
+            if i["deleted"]:
+                continue
+            if role != "cc" and not i["approved"]:
+                continue
+            roles_result.append(i)
+        if roles_result:
+            result["roles"] = roles_result
+            members.append(MemberType.from_pydantic(Member.model_validate(result)))
 
-    roles = result["roles"]
-    roles_result = []
-    for i in roles:
-        if i["deleted"]:
-            continue
-        if role != "cc" and not i["approved"]:
-            continue
-        roles_result.append(i)
-
-    if roles_result:
-        result["roles"] = roles_result
-        return [MemberType.from_pydantic(Member.model_validate(result))]
-    else:
-        raise Exception("No Member Result/s Found")
+    return members
 
 
 @strawberry.field
@@ -144,9 +141,6 @@ async def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
 
     Returns:
         (List[MemberType]): Contains a list of members.
-
-    Raises:
-        Exception: No Member Result/s Found
     """
 
     user = info.context.user
@@ -167,33 +161,29 @@ async def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
     else:
         results = [doc async for doc in membersdb.find({}, {"_id": 0})]
 
-    if results:
-        members = []
-        for result in results:
-            roles = result["roles"]
-            roles_result = []
+    members = []
+    for result in results:
+        roles = result["roles"]
+        roles_result = []
 
-            for i in roles:
-                if i["deleted"] is True:
+        for i in roles:
+            if i["deleted"] is True:
+                continue
+            if not (
+                role in ["cc"]
+                or (role in ["club"] and user["uid"] == club_input["cid"])
+            ):
+                if i["approved"] is False:
                     continue
-                if not (
-                    role in ["cc"]
-                    or (role in ["club"] and user["uid"] == club_input["cid"])
-                ):
-                    if i["approved"] is False:
-                        continue
-                roles_result.append(i)
+            roles_result.append(i)
 
-            if len(roles_result) > 0:
-                result["roles"] = roles_result
-                members.append(
-                    MemberType.from_pydantic(Member.model_validate(result))
-                )
+        if len(roles_result) > 0:
+            result["roles"] = roles_result
+            members.append(
+                MemberType.from_pydantic(Member.model_validate(result))
+            )
 
-        return members
-
-    else:
-        raise Exception("No Member Result/s Found")
+    return members
 
 
 @strawberry.field
@@ -270,7 +260,6 @@ async def pendingMembers(info: Info) -> List[MemberType]:
 
     Raises:
         Exception: Not Authenticated
-        Exception: No Member Result/s Found
     """
 
     user = info.context.user
@@ -279,26 +268,23 @@ async def pendingMembers(info: Info) -> List[MemberType]:
 
     results = [doc async for doc in membersdb.find({}, {"_id": 0})]
 
-    if results:
-        members = []
-        for result in results:
-            roles = result["roles"]
-            roles_result = []
+    members = []
+    for result in results:
+        roles = result["roles"]
+        roles_result = []
 
-            for i in roles:
-                if i["deleted"] or i["approved"] or i["rejected"]:
-                    continue
-                roles_result.append(i)
+        for i in roles:
+            if i["deleted"] or i["approved"] or i["rejected"]:
+                continue
+            roles_result.append(i)
 
-            if len(roles_result) > 0:
-                result["roles"] = roles_result
-                members.append(
-                    MemberType.from_pydantic(Member.model_validate(result))
-                )
+        if len(roles_result) > 0:
+            result["roles"] = roles_result
+            members.append(
+                MemberType.from_pydantic(Member.model_validate(result))
+            )
 
-        return members
-    else:
-        raise Exception("No Member Result/s Found")
+    return members
 
 
 @strawberry.field
