@@ -213,7 +213,6 @@ async def currentMembers(
 
     Raises:
         Exception: Not Authenticated
-        Exception: No Member Result/s Found
     """  # noqa: E501
 
     user = info.context.user
@@ -236,28 +235,25 @@ async def currentMembers(
             )
         ]
 
-    if results:
-        members = []
-        for result in results:
-            roles = result["roles"]
-            roles_result = []
+    members = []
+    for result in results:
+        roles = result["roles"]
+        roles_result = []
 
-            for i in roles:
-                if i["deleted"] or i["end_year"] is not None:
-                    continue
-                if i["approved"] is False:
-                    continue
-                roles_result.append(i)
+        for i in roles:
+            if i["deleted"] or i["end_year"] is not None:
+                continue
+            if i["approved"] is False:
+                continue
+            roles_result.append(i)
 
-            if len(roles_result) > 0:
-                result["roles"] = roles_result
-                members.append(
-                    MemberType.from_pydantic(Member.model_validate(result))
-                )
+        if len(roles_result) > 0:
+            result["roles"] = roles_result
+            members.append(
+                MemberType.from_pydantic(Member.model_validate(result))
+            )
 
-        return members
-    else:
-        raise Exception("No Member Result/s Found")
+    return members
 
 
 @strawberry.field
