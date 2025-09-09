@@ -103,9 +103,7 @@ async def memberRoles(uid: str, info: Info) -> List[MemberType]:
     else:
         role = user["role"]
 
-    results = [
-        doc async for doc in membersdb.find({"uid": uid}, {"_id": 0})
-    ]
+    results = [doc async for doc in membersdb.find({"uid": uid}, {"_id": 0})]
 
     members = []
     for result in results:
@@ -119,7 +117,9 @@ async def memberRoles(uid: str, info: Info) -> List[MemberType]:
             roles_result.append(i)
         if roles_result:
             result["roles"] = roles_result
-            members.append(MemberType.from_pydantic(Member.model_validate(result)))
+            members.append(
+                MemberType.from_pydantic(Member.model_validate(result))
+            )
 
     return members
 
