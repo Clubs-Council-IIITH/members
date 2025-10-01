@@ -151,15 +151,12 @@ async def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
 
     club_input = jsonable_encoder(clubInput)
 
-    if role not in ["cc"] or club_input["cid"] != "clubs":
-        results = [
-            doc
-            async for doc in membersdb.find(
-                {"cid": club_input["cid"]}, {"_id": 0}
-            )
-        ]
-    else:
-        results = [doc async for doc in membersdb.find({}, {"_id": 0})]
+    results = [
+        doc
+        async for doc in membersdb.find(
+            {"cid": club_input["cid"]}, {"_id": 0}
+        )
+    ]
 
     members = []
     for result in results:
@@ -213,17 +210,12 @@ async def currentMembers(
 
     club_input = jsonable_encoder(clubInput)
 
-    if club_input["cid"] == "clubs":
-        if role != "cc":
-            raise Exception("Not Authenticated")
-        results = [doc async for doc in membersdb.find({}, {"_id": 0})]
-    else:
-        results = [
-            doc
-            async for doc in membersdb.find(
-                {"cid": club_input["cid"]}, {"_id": 0}
-            )
-        ]
+    results = [
+        doc
+        async for doc in membersdb.find(
+            {"cid": club_input["cid"]}, {"_id": 0}
+        )
+    ]
 
     members = []
     for result in results:
