@@ -156,7 +156,7 @@ async def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
     if role == "public":
         role_conditions.append({"$eq": ["$$role.approved", True]})
     # for club users, only show approved roles unless they're viewing their own club
-    elif role == "club" and user["uid"] != club_input["cid"]:
+    elif role == "club" and user.get("uid") != club_input["cid"]:
         role_conditions.append({"$eq": ["$$role.approved", True]})
     # for CC and own club, show both approved and pending (approved=false) roles
     
@@ -189,11 +189,11 @@ async def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
         }
     ]
     
-    cursor = await membersdb.aggregate(pipeline)
-    members = []
-    async for doc in cursor:
-        members.append(MemberType.from_pydantic(Member.model_validate(doc)))
-    
+    members_cursor = membersdb.aggregate(pipeline)
+    members = [
+        MemberType.from_pydantic(Member.model_validate(doc))
+        async for doc in members_cursor
+    ]
     return members
 
 
@@ -215,12 +215,6 @@ async def currentMembers(
     Raises:
         Exception: Not Authenticated
     """
-    user = info.context.user
-    if user is None:
-        role = "public"
-    else:
-        role = user["role"]
-
     club_input = jsonable_encoder(clubInput)
     
     pipeline = [
@@ -256,12 +250,11 @@ async def currentMembers(
         }
     ]
     
-    cursor = await membersdb.aggregate(pipeline)
-    members = []
-    async for doc in cursor:
-        members.append(MemberType.from_pydantic(Member.model_validate(doc)))
-    
-    return members
+    members_cursor = membersdb.aggregate(pipeline)
+    return [
+        MemberType.from_pydantic(Member.model_validate(doc))
+        async for doc in members_cursor
+    ]
 
 
 @strawberry.field
@@ -307,12 +300,12 @@ async def pendingMembers(info: Info) -> List[MemberType]:
         }
     ]
 
-    cursor = await membersdb.aggregate(pipeline)
-    members = []
-    async for doc in cursor:
-        members.append(MemberType.from_pydantic(Member.model_validate(doc)))
-    
-    return members
+    members_cursor = membersdb.aggregate(pipeline)
+    return [
+        MemberType.from_pydantic(Member.model_validate(doc))
+        async for doc in members_cursor
+    ]
+
 
 @strawberry.field
 async def downloadMembersData(
