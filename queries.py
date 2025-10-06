@@ -282,7 +282,7 @@ async def pendingMembers(info: Info) -> List[MemberType]:
                         "cond": {
                             "$and": [
                                 {"$ne": ["$$role.deleted", True]},
-                                {"$ne": ["$$role.approved", True]},
+                                {"$eq": ["$$role.approved", False]},
                                 {"$ne": ["$$role.rejected", True]}
                             ]
                         }
