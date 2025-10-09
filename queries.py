@@ -189,7 +189,7 @@ async def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
         }
     ]
     
-    members_cursor = membersdb.aggregate(pipeline)
+    members_cursor = await membersdb.aggregate(pipeline)
     members = [
         MemberType.from_pydantic(Member.model_validate(doc))
         async for doc in members_cursor
@@ -250,7 +250,7 @@ async def currentMembers(
         }
     ]
     
-    members_cursor = membersdb.aggregate(pipeline)
+    members_cursor = await membersdb.aggregate(pipeline)
     return [
         MemberType.from_pydantic(Member.model_validate(doc))
         async for doc in members_cursor
@@ -300,7 +300,7 @@ async def pendingMembers(info: Info) -> List[MemberType]:
         }
     ]
 
-    members_cursor = membersdb.aggregate(pipeline)
+    members_cursor = await membersdb.aggregate(pipeline)
     return [
         MemberType.from_pydantic(Member.model_validate(doc))
         async for doc in members_cursor
