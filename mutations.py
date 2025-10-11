@@ -26,7 +26,7 @@ async def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     Mutation resolver to create a new member by a club or CC
 
     Args:
-        memberInput (otypes.FullMemberInput): Contains the details of the member.
+        memberInput (otypes.FullMemberInput): Contains details of the member.
         info (otypes.Info): Contains the logged in user's details.
 
     Returns:
@@ -115,7 +115,7 @@ async def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     Mutation resolver to edit a member by club and CC
 
     Args:
-        memberInput (otypes.FullMemberInput): Contains the details of the member.
+        memberInput (otypes.FullMemberInput): Contains details of the member.
         info (otypes.Info): Contains the logged in user's details.
 
     Returns:
@@ -310,8 +310,8 @@ async def approveMember(
     Mutation resolver to approve a member's role by CC
 
     Args:
-        memberInput (otypes.SimpleMemberInput): Contains the details of the member
-                                         and member's role.cid, uid and rid.
+        memberInput (otypes.SimpleMemberInput): Contains the details of the
+                                         member's role, cid, uid and rid.
         info (otypes.Info): Contains the logged in user's details.
 
     Returns:

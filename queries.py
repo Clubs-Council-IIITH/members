@@ -94,7 +94,7 @@ async def memberRoles(uid: str, info: Info) -> List[MemberType]:
         info (otypes.Info): Contains the logged in user's details.
 
     Returns:
-        (List[otypes.MemberType]): Contains a list of member with their current roles.
+        (List[otypes.MemberType]): Contains a list of member's current roles.
     """
 
     user = info.context.user
@@ -301,8 +301,8 @@ async def downloadMembersData(
         info (otypes.Info): Contains the logged in user's details.
 
     Returns:
-        (otypes.MemberCSVResponse): Contains the data of all members specific to the
-            requested fields like batch and status in a CSV format.
+        (otypes.MemberCSVResponse): Contains the data of all members specific
+             to the requested fields like batch and status in a CSV format.
 
     Raises:
         Exception: You do not have permission to access this resource.
