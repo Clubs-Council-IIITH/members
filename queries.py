@@ -37,12 +37,12 @@ async def member(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     for club and CC
 
     Args:
-        memberInput (SimpleMemberInput): Contains the cid and
+        memberInput (otypes.SimpleMemberInput): Contains the cid and
                                          uid of the member.
-        info (Info): Contains the logged in user's details.
+        info (otypes.Info): Contains the logged in user's details.
 
     Returns:
-        (MemberType): Contains the details of the member.
+        (otypes.MemberType): Contains the details of the member.
 
     Raises:
         Exception: Not Authenticated
@@ -91,10 +91,10 @@ async def memberRoles(uid: str, info: Info) -> List[MemberType]:
 
     Args:
         uid (str): The uid of the user.
-        info (Info): Contains the logged in user's details.
+        info (otypes.Info): Contains the logged in user's details.
 
     Returns:
-        (List[MemberType]): Contains a list of member with their current roles.
+        (List[otypes.MemberType]): Contains a list of member with their current roles.
     """
 
     user = info.context.user
@@ -136,11 +136,11 @@ async def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
     and approved roles.
 
     Args:
-        clubInput (SimpleClubInput): Contains the cid of the club.
-        info (Info): Contains the logged in user's details.
+        clubInput (otypes.SimpleClubInput): Contains the cid of the club.
+        info (otypes.Info): Contains the logged in user's details.
 
     Returns:
-        (List[MemberType]): Contains a list of members.
+        (List[otypes.MemberType]): Contains a list of members.
     """
 
     user = info.context.user
@@ -195,11 +195,11 @@ async def currentMembers(
     approved roles, for Public.
 
     Args:
-        clubInput (SimpleClubInput): Contains the cid of the club.
-        info (Info): Contains the logged in user's details.
+        clubInput (otypes.SimpleClubInput): Contains the cid of the club.
+        info (otypes.Info): Contains the logged in user's details.
 
     Returns:
-        (List[MemberType]): Contains a list of members.
+        (List[otypes.MemberType]): Contains a list of members.
 
     Raises:
         Exception: Not Authenticated
@@ -253,10 +253,10 @@ async def pendingMembers(info: Info) -> List[MemberType]:
     pending roles for CC.
 
     Args:
-        info (Info): Contains the logged in user's details.
+        info (otypes.Info): Contains the logged in user's details.
 
     Returns:
-        (List[MemberType]): Contains a list of members.
+        (List[otypes.MemberType]): Contains a list of members.
 
     Raises:
         Exception: Not Authenticated
@@ -296,12 +296,12 @@ async def downloadMembersData(
     requested fields like batch and status in a CSV format at once.
 
     Args:
-        details (MemberInputDataReportDetails): Contains the
+        details (otypes.MemberInputDataReportDetails): Contains the
                                                 details of the report.
-        info (Info): Contains the logged in user's details.
+        info (otypes.Info): Contains the logged in user's details.
 
     Returns:
-        (MemberCSVResponse): Contains the data of all members specific to the
+        (otypes.MemberCSVResponse): Contains the data of all members specific to the
             requested fields like batch and status in a CSV format.
 
     Raises:
