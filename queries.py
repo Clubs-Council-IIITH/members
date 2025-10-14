@@ -155,10 +155,10 @@ async def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
     # for public users, only show approved roles
     if role == "public":
         role_conditions.append({"$eq": ["$$role.approved", True]})
-    # for club users, only show approved roles unless they're viewing their own club
+    # for other clubs show only approved users
     elif role == "club" and user.get("uid") != club_input["cid"]:
         role_conditions.append({"$eq": ["$$role.approved", True]})
-    # for CC and own club, show both approved and pending (approved=false) roles
+    # for CC and own club, show both approved and pending roles
     
     pipeline = [
         {
