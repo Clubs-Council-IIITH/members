@@ -149,9 +149,9 @@ async def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
         role = user["role"]
 
     club_input = jsonable_encoder(clubInput)
-    
+
     role_conditions = [{"$ne": ["$$role.deleted", True]}]
-    
+
     # for public users, only show approved roles
     if role == "public":
         role_conditions.append({"$eq": ["$$role.approved", True]})
@@ -159,36 +159,24 @@ async def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
     elif role == "club" and user.get("uid") != club_input["cid"]:
         role_conditions.append({"$eq": ["$$role.approved", True]})
     # for CC and own club, show both approved and pending roles
-    
+
     pipeline = [
-        {
-            "$match": {
-                "cid": club_input["cid"]
-            }
-        },
+        {"$match": {"cid": club_input["cid"]}},
         {
             "$addFields": {
                 "roles": {
                     "$filter": {
                         "input": "$roles",
                         "as": "role",
-                        "cond": {
-                            "$and": role_conditions
-                        }
+                        "cond": {"$and": role_conditions},
                     }
                 }
             }
         },
-        {
-            "$match": {
-                "roles.0": {"$exists": True}
-            }
-        },
-        {
-            "$project": {"_id": 0}
-        }
+        {"$match": {"roles.0": {"$exists": True}}},
+        {"$project": {"_id": 0}},
     ]
-    
+
     members_cursor = await membersdb.aggregate(pipeline)
     members = [
         MemberType.from_pydantic(Member.model_validate(doc))
@@ -216,13 +204,9 @@ async def currentMembers(
         Exception: Not Authenticated
     """
     club_input = jsonable_encoder(clubInput)
-    
+
     pipeline = [
-        {
-            "$match": {
-                "cid": club_input["cid"]
-            }
-        },
+        {"$match": {"cid": club_input["cid"]}},
         {
             "$addFields": {
                 "roles": {
@@ -233,23 +217,17 @@ async def currentMembers(
                             "$and": [
                                 {"$ne": ["$$role.deleted", True]},
                                 {"$eq": ["$$role.approved", True]},
-                                {"$eq": ["$$role.end_year", None]}
+                                {"$eq": ["$$role.end_year", None]},
                             ]
-                        }
+                        },
                     }
                 }
             }
         },
-        {
-            "$match": {
-                "roles.0": {"$exists": True}
-            }
-        },
-        {
-            "$project": {"_id": 0}
-        }
+        {"$match": {"roles.0": {"$exists": True}}},
+        {"$project": {"_id": 0}},
     ]
-    
+
     members_cursor = await membersdb.aggregate(pipeline)
     return [
         MemberType.from_pydantic(Member.model_validate(doc))
@@ -283,21 +261,15 @@ async def pendingMembers(info: Info) -> List[MemberType]:
                             "$and": [
                                 {"$ne": ["$$role.deleted", True]},
                                 {"$eq": ["$$role.approved", False]},
-                                {"$ne": ["$$role.rejected", True]}
+                                {"$ne": ["$$role.rejected", True]},
                             ]
-                        }
+                        },
                     }
                 }
             }
         },
-        {
-            "$match": {
-                "roles.0": {"$exists": True}
-            }
-        },
-        {
-            "$project": {"_id": 0}
-        }
+        {"$match": {"roles.0": {"$exists": True}}},
+        {"$project": {"_id": 0}},
     ]
 
     members_cursor = await membersdb.aggregate(pipeline)
