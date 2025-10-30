@@ -18,7 +18,7 @@ async def non_deleted_members(member_input) -> MemberType:
         member_input (dict): json serialised FullMemberInput.
 
     Returns:
-        (MemberType): Contains the details of the member.
+        (otypes.MemberType): Contains the details of the member.
 
     Raises:
         Exception: No such Record

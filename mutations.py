@@ -26,11 +26,11 @@ async def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     Mutation resolver to create a new member by a club or CC
 
     Args:
-        memberInput (FullMemberInput): Contains the details of the member.
-        info (Info): Contains the logged in user's details.
+        memberInput (otypes.FullMemberInput): Contains details of the member.
+        info (otypes.Info): Contains the logged in user's details.
 
     Returns:
-        (MemberType): Contains the details of the member.
+        (otypes.MemberType): Contains the details of the member.
 
     Raises:
         Exception: Not Authenticated
@@ -115,11 +115,11 @@ async def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     Mutation resolver to edit a member by club and CC
 
     Args:
-        memberInput (FullMemberInput): Contains the details of the member.
-        info (Info): Contains the logged in user's details.
+        memberInput (otypes.FullMemberInput): Contains details of the member.
+        info (otypes.Info): Contains the logged in user's details.
 
     Returns:
-        (MemberType): Contains the details of the member.
+        (otypes.MemberType): Contains the details of the member.
 
     Raises:
         Exception: Not Authenticated
@@ -231,12 +231,12 @@ async def deleteMember(
     Mutation resolver to delete a member or member's role by club or CC
 
     Args:
-        memberInput (SimpleMemberInput): Contains the cid and uid of the
+        memberInput (otypes.SimpleMemberInput): Contains the cid and uid of the
                                          member, and rid when deleting role.
-        info (Info): Contains the logged in user's details.
+        info (otypes.Info): Contains the logged in user's details.
 
     Returns:
-        (MemberType): Contains the details of the member.
+        (otypes.MemberType): Contains the details of the member.
 
     Raises:
         Exception: Not Authenticated
@@ -310,12 +310,12 @@ async def approveMember(
     Mutation resolver to approve a member's role by CC
 
     Args:
-        memberInput (SimpleMemberInput): Contains the details of the member
-                                         and member's role.cid, uid and rid.
-        info (Info): Contains the logged in user's details.
+        memberInput (otypes.SimpleMemberInput): Contains the details of the
+                                         member's role, cid, uid and rid.
+        info (otypes.Info): Contains the logged in user's details.
 
     Returns:
-        (MemberType): Contains the details of the member.
+        (otypes.MemberType): Contains the details of the member.
 
     Raises:
         Exception: Not Authenticated
@@ -384,12 +384,12 @@ async def rejectMember(
     Mutation resolver to reject a member's role by CC
 
     Args:
-        memberInput (SimpleMemberInput): Contains the details of the
+        memberInput (otypes.SimpleMemberInput): Contains the details of the
                                          member.cid, uid and rid.
-        info (Info): Contains the logged in user's details.
+        info (otypes.Info): Contains the logged in user's details.
 
     Returns:
-        (MemberType): Contains the details of the member.
+        (otypes.MemberType): Contains the details of the member.
 
     Raises:
         Exception: Not Authenticated
@@ -492,9 +492,9 @@ async def updateMembersCid(
     for CC
 
     Args:
-        old_cid: the old cid
-        new_cid: the new cid
-        inter_communication_secret (str | None): The inter communication
+        old_cid (str): the old cid
+        new_cid (str): the new cid
+        inter_communication_secret (str): The inter communication
                                                  secret. Defaults to None.
 
     Returns:

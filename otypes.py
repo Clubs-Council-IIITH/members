@@ -94,7 +94,10 @@ class RolesInput:
 )
 class FullMemberInput:
     """
-    Input used to take a member's cid, uid, roles and poc(optional) fields
+    Input used to take a member's cid, uid, roles and poc(optional) fields.
+
+    Attributes:
+    poc (Optional[bool]): point of contact of the member. Defaults to None.
     """
 
     poc: Optional[bool] = strawberry.UNSET
@@ -104,6 +107,11 @@ class FullMemberInput:
 class SimpleMemberInput:
     """
     Input used to take a member's cid, uid and rid(optional) fields
+
+    Attributes:
+    cid (str): member's cid.
+    uid (str): member's uid.
+    rid (str): member's rid.
     """
 
     cid: str
@@ -115,6 +123,9 @@ class SimpleMemberInput:
 class SimpleClubInput:
     """
     Input used to take a club's cid
+
+    Attributes:
+    cid (str): club's cid.
     """
 
     cid: str
@@ -124,6 +135,16 @@ class SimpleClubInput:
 class MemberInputDataReportDetails:
     """
     Input used to take in search parameters for the member data report
+
+    Attributes:
+    clubid (List[str]): List of club ids to filter members by.
+        If None, no filtering by club ids is applied.
+    fields (List[str]): List of member fields to include in the report.
+    typeMembers (str): Type of members to be included in report.
+    typeRoles (str): Type of roles to be included in report.Default is None.
+    batchFiltering (List[str]): Batch based search to be included in the fetch.
+    batchFilteringType (List[str]): Type of filter, seperate for ug and pg.
+    dateRoles (List[int]): date filters for the roles of the members.
     """
 
     clubid: List[str] | None
@@ -151,6 +172,11 @@ class MemberInputDataReportDetails:
 class MemberCSVResponse:
     """
     Type used to return the csv file and the operation message
+
+    Attributes:
+    csvFile (str): the csv file as a string.
+    successMessage (str): message in case of successful operation.
+    errorMessage (str): message in case of error.
     """
 
     csvFile: str
