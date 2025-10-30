@@ -307,7 +307,7 @@ async def downloadMembersData(
     allClubs = await getClubs(info.context.cookies)
     if len(allClubs) == 0:
         raise Exception("No clubs found.")
-    
+
     if "allclubs" not in details.clubid:
         clubList = details.clubid
     else:

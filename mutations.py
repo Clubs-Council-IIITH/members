@@ -205,9 +205,7 @@ async def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
 
         if not found_existing_role:
             role_new["approved"] = auto_approve
-            role_new["approval_time"] = (
-                time_str if auto_approve else None
-            )
+            role_new["approval_time"] = time_str if auto_approve else None
             role_new["rejection_time"] = None
         roles.append(role_new)
 
