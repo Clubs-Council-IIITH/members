@@ -142,7 +142,6 @@ async def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
     Returns:
         (List[otypes.MemberType]): Contains a list of members.
     """
-
     user = info.context.user
     if user is None:
         role = "public"
@@ -151,38 +150,38 @@ async def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
 
     club_input = jsonable_encoder(clubInput)
 
-    if role not in ["cc"] or club_input["cid"] != "clubs":
-        results = [
-            doc
-            async for doc in membersdb.find(
-                {"cid": club_input["cid"]}, {"_id": 0}
-            )
-        ]
-    else:
-        results = [doc async for doc in membersdb.find({}, {"_id": 0})]
+    role_conditions = [{"$ne": ["$$role.deleted", True]}]
 
-    members = []
-    for result in results:
-        roles = result["roles"]
-        roles_result = []
+    # for public users, only show approved roles
+    if role == "public":
+        role_conditions.append({"$eq": ["$$role.approved", True]})
+    # for other clubs show only approved users
+    elif role == "club" and user.get("uid") != club_input["cid"]:
+        role_conditions.append({"$eq": ["$$role.approved", True]})
+    # for CC and own club, show both approved and pending roles
 
-        for i in roles:
-            if i["deleted"] is True:
-                continue
-            if not (
-                role in ["cc"]
-                or (role in ["club"] and user["uid"] == club_input["cid"])
-            ):
-                if i["approved"] is False:
-                    continue
-            roles_result.append(i)
+    pipeline = [
+        {"$match": {"cid": club_input["cid"]}},
+        {
+            "$addFields": {
+                "roles": {
+                    "$filter": {
+                        "input": "$roles",
+                        "as": "role",
+                        "cond": {"$and": role_conditions},
+                    }
+                }
+            }
+        },
+        {"$match": {"roles.0": {"$exists": True}}},
+        {"$project": {"_id": 0}},
+    ]
 
-        if len(roles_result) > 0:
-            result["roles"] = roles_result
-            members.append(
-                MemberType.from_pydantic(Member.model_validate(result))
-            )
-
+    members_cursor = await membersdb.aggregate(pipeline)
+    members = [
+        MemberType.from_pydantic(Member.model_validate(doc))
+        async for doc in members_cursor
+    ]
     return members
 
 
@@ -203,47 +202,37 @@ async def currentMembers(
 
     Raises:
         Exception: Not Authenticated
-    """  # noqa: E501
-
-    user = info.context.user
-    if user is None:
-        role = "public"
-    else:
-        role = user["role"]
-
+    """
     club_input = jsonable_encoder(clubInput)
 
-    if club_input["cid"] == "clubs":
-        if role != "cc":
-            raise Exception("Not Authenticated")
-        results = [doc async for doc in membersdb.find({}, {"_id": 0})]
-    else:
-        results = [
-            doc
-            async for doc in membersdb.find(
-                {"cid": club_input["cid"]}, {"_id": 0}
-            )
-        ]
+    pipeline = [
+        {"$match": {"cid": club_input["cid"]}},
+        {
+            "$addFields": {
+                "roles": {
+                    "$filter": {
+                        "input": "$roles",
+                        "as": "role",
+                        "cond": {
+                            "$and": [
+                                {"$ne": ["$$role.deleted", True]},
+                                {"$eq": ["$$role.approved", True]},
+                                {"$eq": ["$$role.end_year", None]},
+                            ]
+                        },
+                    }
+                }
+            }
+        },
+        {"$match": {"roles.0": {"$exists": True}}},
+        {"$project": {"_id": 0}},
+    ]
 
-    members = []
-    for result in results:
-        roles = result["roles"]
-        roles_result = []
-
-        for i in roles:
-            if i["deleted"] or i["end_year"] is not None:
-                continue
-            if i["approved"] is False:
-                continue
-            roles_result.append(i)
-
-        if len(roles_result) > 0:
-            result["roles"] = roles_result
-            members.append(
-                MemberType.from_pydantic(Member.model_validate(result))
-            )
-
-    return members
+    members_cursor = await membersdb.aggregate(pipeline)
+    return [
+        MemberType.from_pydantic(Member.model_validate(doc))
+        async for doc in members_cursor
+    ]
 
 
 @strawberry.field
@@ -251,7 +240,6 @@ async def pendingMembers(info: Info) -> List[MemberType]:
     """
     Returns the pending members of all clubs with their non-deleted,
     pending roles for CC.
-
     Args:
         info (otypes.Info): Contains the logged in user's details.
 
@@ -261,30 +249,36 @@ async def pendingMembers(info: Info) -> List[MemberType]:
     Raises:
         Exception: Not Authenticated
     """
-
     user = info.context.user
     if user is None or user["role"] not in ["cc"]:
         raise Exception("Not Authenticated")
+    pipeline = [
+        {
+            "$addFields": {
+                "roles": {
+                    "$filter": {
+                        "input": "$roles",
+                        "as": "role",
+                        "cond": {
+                            "$and": [
+                                {"$ne": ["$$role.deleted", True]},
+                                {"$eq": ["$$role.approved", False]},
+                                {"$ne": ["$$role.rejected", True]},
+                            ]
+                        },
+                    }
+                }
+            }
+        },
+        {"$match": {"roles.0": {"$exists": True}}},
+        {"$project": {"_id": 0}},
+    ]
 
-    results = [doc async for doc in membersdb.find({}, {"_id": 0})]
-
-    members = []
-    for result in results:
-        roles = result["roles"]
-        roles_result = []
-
-        for i in roles:
-            if i["deleted"] or i["approved"] or i["rejected"]:
-                continue
-            roles_result.append(i)
-
-        if len(roles_result) > 0:
-            result["roles"] = roles_result
-            members.append(
-                MemberType.from_pydantic(Member.model_validate(result))
-            )
-
-    return members
+    members_cursor = await membersdb.aggregate(pipeline)
+    return [
+        MemberType.from_pydantic(Member.model_validate(doc))
+        async for doc in members_cursor
+    ]
 
 
 @strawberry.field
