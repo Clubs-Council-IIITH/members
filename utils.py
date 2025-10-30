@@ -1,6 +1,8 @@
+import asyncio
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
+from cachetools import TTLCache
 from httpx import AsyncClient
 
 from db import membersdb
@@ -8,6 +10,10 @@ from models import Member
 from otypes import MemberType
 
 inter_communication_secret = os.getenv("INTER_COMMUNICATION_SECRET")
+CACHE_TTL = int(timedelta(days=10).total_seconds())
+
+club_category_cache = TTLCache(maxsize=100, ttl=CACHE_TTL)
+cache_lock = asyncio.Lock()
 
 
 async def non_deleted_members(member_input) -> MemberType:
@@ -229,8 +235,6 @@ async def getClubDetails(
             query Club($clubInput: SimpleClubInput!) {
                 club(clubInput: $clubInput) {
                     cid
-                    name
-                    email
                     category
                 }
             }
@@ -273,3 +277,30 @@ async def getClubs(cookies=None) -> list:
         return result.json()["data"]["allClubs"]
     except Exception:
         return []
+
+
+async def clubCategory(cid: str, cookies) -> str:
+    """
+    Get the category of a club from its cid.
+    Uses caching to reduce repeated calls.
+
+    Args:
+        cid (str): club id
+        cookies (dict): The cookies of the user. Defaults to None.
+    Returns:
+        (str): category of the club
+    """
+    async with cache_lock:
+        if cid in club_category_cache:
+            return club_category_cache[cid]
+
+    club_details = await getClubDetails(cid, cookies)
+
+    if not club_details or "category" not in club_details:
+        raise Exception(f"Club with cid {cid} not found.")
+
+    category = club_details["category"]
+    async with cache_lock:
+        club_category_cache[cid] = category
+
+    return category
