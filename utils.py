@@ -262,8 +262,6 @@ async def getClubs(cookies=None) -> list:
                 allClubs {
                     cid
                     name
-                    code
-                    email
                 }
             }
         """
