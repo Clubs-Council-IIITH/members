@@ -279,7 +279,7 @@ async def getClubs(cookies=None) -> list:
         return []
 
 
-async def clubCategory(cid: str, cookies) -> str:
+async def clubCategory(cid: str, cookies: dict = None) -> str:
     """
     Get the category of a club from its cid.
     Uses caching to reduce repeated calls.
