@@ -23,7 +23,6 @@ from otypes import (
     SimpleMemberInput,
 )
 from utils import (
-    getClubDetails,
     getClubs,
     getUsersByBatch,
     getUsersByList,
@@ -305,10 +304,13 @@ async def downloadMembersData(
     if user is None:
         raise Exception("You do not have permission to access this resource.")
 
+    allClubs = await getClubs(info.context.cookies)
+    if len(allClubs) == 0:
+        raise Exception("No clubs found.")
+    
     if "allclubs" not in details.clubid:
         clubList = details.clubid
     else:
-        allClubs = await getClubs(info.context.cookies)
         clubList = [club["cid"] for club in allClubs]
         curr_date = datetime.now()
         day = curr_date.day
@@ -416,18 +418,16 @@ async def downloadMembersData(
 
     # So that we don't have to query the club name for each member
     clubNames = dict()
+    for club in allClubs:
+        clubNames[club["cid"]] = club["name"]
 
     for member in allMembers:
         memberData = {}
         userDetails = userDetailsList.get(member["uid"])
         if userDetails is None:
             continue
-        if clubNames.get(member["cid"]) is None:
-            clubNames[member["cid"]] = (
-                await getClubDetails(member["cid"], info.context.cookies)
-            )["name"]
 
-        clubName = clubNames.get(member["cid"])
+        clubName = clubNames.get(member["cid"], "Unknown")
 
         for field in details.fields:
             value = ""

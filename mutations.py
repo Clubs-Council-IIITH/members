@@ -14,7 +14,7 @@ from models import Member
 
 # import all models and types
 from otypes import FullMemberInput, Info, MemberType, SimpleMemberInput
-from utils import getUser, non_deleted_members, unique_roles_id
+from utils import clubCategory, getUser, non_deleted_members, unique_roles_id
 
 inter_communication_secret_global = getenv("INTER_COMMUNICATION_SECRET")
 ist = pytz.timezone("Asia/Kolkata")
@@ -76,6 +76,11 @@ async def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
         if i["end_year"] and i["start_year"] > i["end_year"]:
             raise Exception("Start year cannot be greater than end year")
 
+    club_category = await clubCategory(
+        member_input["cid"], info.context.cookies
+    )
+    auto_approve = user["role"] == "cc" or club_category in ["body", "admin"]
+
     roles0 = []
     for role in member_input["roles"]:
         if role["start_year"] > datetime.now().year:
@@ -88,7 +93,7 @@ async def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
 
     roles = []
     for role in roles0:
-        if user["role"] == "cc":
+        if auto_approve:
             role["approved"] = True
             role["approval_time"] = time_str
         roles.append(role)
@@ -167,6 +172,11 @@ async def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     current_time = datetime.now(ist)
     time_str = current_time.strftime("%d-%m-%Y %I:%M %p IST")
 
+    club_category = await clubCategory(
+        member_input["cid"], info.context.cookies
+    )
+    auto_approve = user["role"] == "cc" or club_category in ["body", "admin"]
+
     roles = []
     for role in member_input["roles"]:
         if role["start_year"] > datetime.now().year:
@@ -194,9 +204,9 @@ async def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
                 break
 
         if not found_existing_role:
-            role_new["approved"] = user["role"] == "cc"
+            role_new["approved"] = auto_approve
             role_new["approval_time"] = (
-                time_str if user["role"] == "cc" else None
+                time_str if auto_approve else None
             )
             role_new["rejection_time"] = None
         roles.append(role_new)
