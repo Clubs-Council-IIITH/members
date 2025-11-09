@@ -14,7 +14,8 @@ Attributes:
     MONGO_DATABASE (str): MongoDB database name.
     client (AsyncMongoClient): MongoDB client.
     db (pymongo.asynchronous.database.AsyncDatabase): MongoDB database.
-    membersdb (pymongo.asynchronous.collection.AsyncCollection): MongoDB collection for members.
+    membersdb (pymongo.asynchronous.collection.AsyncCollection): MongoDB
+                                                     members collection.
 """
 
 from os import getenv
