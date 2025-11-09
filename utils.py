@@ -176,6 +176,8 @@ async def getUsersByBatch(
 
     Args:
         batch (int): batch year of the users
+        ug (bool): Whether to include UG students. Defaults to True.
+        pg (bool): Whether to include PG students. Defaults to True.
         cookies (dict): The cookies of the user. Defaults to None.
 
     Returns:

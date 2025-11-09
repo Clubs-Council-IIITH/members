@@ -111,7 +111,7 @@ class SimpleMemberInput:
     Attributes:
     cid (str): member's cid.
     uid (str): member's uid.
-    rid (str): member's rid.
+    rid (Optional[str]): member's rid.
     """
 
     cid: str

@@ -492,9 +492,10 @@ async def updateMembersCid(
     for CC
 
     Args:
+        info (otypes.Info): Contains the user details.
         old_cid (str): the old cid
         new_cid (str): the new cid
-        inter_communication_secret (str): The inter communication
+        inter_communication_secret (str | None): The inter communication
                                                  secret. Defaults to None.
 
     Returns:
