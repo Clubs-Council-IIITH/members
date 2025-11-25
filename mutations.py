@@ -4,8 +4,8 @@ Mutation resolvers
 
 from datetime import datetime
 from os import getenv
+from zoneinfo import ZoneInfo
 
-import pytz
 import strawberry
 from fastapi.encoders import jsonable_encoder
 
@@ -17,7 +17,7 @@ from otypes import FullMemberInput, Info, MemberType, SimpleMemberInput
 from utils import clubCategory, getUser, non_deleted_members, unique_roles_id
 
 inter_communication_secret_global = getenv("INTER_COMMUNICATION_SECRET")
-ist = pytz.timezone("Asia/Kolkata")
+ist = ZoneInfo("Asia/Kolkata")
 
 
 @strawberry.mutation
