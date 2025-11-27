@@ -102,7 +102,9 @@ async def memberRoles(uid: str, info: Info) -> List[MemberType]:
     else:
         role = user["role"]
 
-    results = [doc async for doc in membersdb.find({"uid": uid}, {"_id": 0})]
+    results = await membersdb.find({"uid": uid}, {"_id": 0}).to_list(
+        length=None
+    )
 
     members = []
     for result in results:
