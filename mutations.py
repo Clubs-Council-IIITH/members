@@ -38,7 +38,7 @@ async def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
         Exception: A record with same uid and cid already exists
         Exception: Invalid User ID
         Exception: Roles cannot be empty
-        Exception: Start year cannot be greater than end year
+        Exception: Start date cannot be after end date
     """
 
     user = info.context.user
@@ -73,26 +73,27 @@ async def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
         raise Exception("Roles cannot be empty")
 
     for i in member_input["roles"]:
-        if i["end_year"] and i["start_year"] > i["end_year"]:
-            raise Exception("Start year cannot be greater than end year")
+        if i["end_my"] is not None:
+            sm, sy = i["start_my"][0], i["start_my"][1]
+            em, ey = i["end_my"][0], i["end_my"][1]
+            if (sy, sm) > (ey, em):
+                raise Exception("Start date cannot be after end date")
 
     club_category = await clubCategory(
         member_input["cid"], info.context.cookies
     )
     auto_approve = user["role"] == "cc" or club_category in ["body", "admin"]
 
-    roles0 = []
-    for role in member_input["roles"]:
-        if role["start_year"] > datetime.now().year:
-            role["start_year"] = datetime.now().year
-            role["end_year"] = None
-        roles0.append(role)
-
     current_time = datetime.now(ist)
     time_str = current_time.strftime("%d-%m-%Y %I:%M %p IST")
+    now_m, now_y = datetime.now().month, datetime.now().year
 
     roles = []
-    for role in roles0:
+    for role in member_input["roles"]:
+        sm, sy = role["start_my"][0], role["start_my"][1]
+        if (sy, sm) > (now_y, now_m):
+            role["start_my"] = [now_m, now_y]
+            role["end_my"] = None
         if auto_approve:
             role["approved"] = True
             role["approval_time"] = time_str
@@ -131,7 +132,7 @@ async def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
         Exception: Not Authenticated to access this API
         Exception: No such Record!
         Exception: Roles cannot be empty
-        Exception: Start year cannot be greater than end year
+        Exception: Start date cannot be after end date
     """
 
     user = info.context.user
@@ -150,8 +151,11 @@ async def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
         raise Exception("Roles cannot be empty")
 
     for i in member_input["roles"]:
-        if i["end_year"] and i["start_year"] > i["end_year"]:
-            raise Exception("Start year cannot be greater than end year")
+        if i["end_my"] is not None:
+            sm, sy = i["start_my"][0], i["start_my"][1]
+            em, ey = i["end_my"][0], i["end_my"][1]
+            if (sy, sm) > (ey, em):
+                raise Exception("Start date cannot be after end date")
 
     member_ref = await membersdb.find_one(
         {
@@ -179,18 +183,20 @@ async def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
 
     roles = []
     for role in member_input["roles"]:
-        if role["start_year"] > datetime.now().year:
-            role["start_year"] = datetime.now().year
-            role["end_year"] = None
+        now_m, now_y = datetime.now().month, datetime.now().year
+        sm, sy = role["start_my"][0], role["start_my"][1]
+        if (sy, sm) > (now_y, now_m):
+            role["start_my"] = [now_m, now_y]
+            role["end_my"] = None
         role_new = role.copy()
 
-        # if role's start_year, end_year, name is same as existing role,
+        # if role's start_my, end_my, name is same as existing role,
         # then keep the existing approved status
         found_existing_role = False
         for i in member_roles:
             if (
-                i.start_year == role_new["start_year"]
-                and i.end_year == role_new["end_year"]
+                i.start_my == role_new["start_my"]
+                and i.end_my == role_new["end_my"]
                 and i.name == role_new["name"]
             ):
                 role_new["approved"] = i.approved
@@ -476,11 +482,11 @@ async def rejectMember(
 #             "$and": [
 #                 {"cid": member_input["cid"]},
 #                 {"uid": member_input["uid"]},
-#                 {"start_year": member_input["start_year"]},
+#                 {"start_my": member_input["start_my"]},
 #                 {"deleted": False},
 #             ]
 #         },
-#         {"$set": {"end_year": datetime.now().year}},
+#         {"$set": {"end_my": datetime.now().year}},
 #     )
 
 #     created_sample = Member.model_validate(membersdb.find_one(
