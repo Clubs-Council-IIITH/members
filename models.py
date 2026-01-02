@@ -88,7 +88,6 @@ class Roles(BaseModel):
                 raise ValueError("year must be between 2010 and 2050")
             return v
 
-        # Validate values locally first to avoid recursive assignment hooks
         start_validated = check(self.start_my)
 
         end_validated = None
@@ -102,7 +101,6 @@ class Roles(BaseModel):
             if (ey, em) < (sy, sm):
                 end_validated = None
 
-        # Use base setattr to bypass validate_assignment and prevent recursion
         object.__setattr__(self, "start_my", start_validated)
         object.__setattr__(self, "end_my", end_validated)
 
