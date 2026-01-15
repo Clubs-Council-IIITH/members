@@ -51,7 +51,7 @@ class Roles(BaseModel):
         start_year (int): Year the role started
         end_year (Optional[int]): Year the role will/has ended. Defaults to
                                    None.
-        start_month (int): Month the role started
+        start_month (Optional[int]): Month the role started
         end_month (Optional[int]): Month the role will/end ended. Defaults to
                                    None.
         approved (bool): Whether the role is approved. Defaults to False.
@@ -67,7 +67,7 @@ class Roles(BaseModel):
     name: str = Field(..., min_length=1, max_length=99)
     start_year: int = Field(..., ge=2010, le=2050)
     end_year: int | None = Field(None, gt=2010, le=2051)
-    start_month: int = Field(..., ge=1, le=12)
+    start_month: int | None = Field(None, ge=1, le=12)
     end_month: int | None = Field(None, ge=1, le=12)
     approved: bool = False
     approval_time: str | None = None
@@ -85,21 +85,25 @@ class Roles(BaseModel):
         start_month = self.start_month
         start_year = self.start_year
 
-        if start_year is None or start_month is None:
-            raise ValueError("start year and month must be provided")
+        if start_year is None:
+            raise ValueError("start year must be provided")
         if not (2010 <= start_year <= 2050):
             raise ValueError("start year must be between 2010 and 2050")
-        if not (1 <= start_month <= 12):
+        if start_month and not (1 <= start_month <= 12):
             raise ValueError("start month must be between 1 and 12")
 
         end_month = self.end_month
         end_year = self.end_year
 
         # If end < start, clear end
-        if end_year is not None and end_month is not None:
-            if (end_year, end_month) < (start_year, start_month):
+        if end_year is not None:
+            if end_year < start_year:
                 end_year = None
                 end_month = None
+            elif end_year == start_year and end_month and start_month and end_month < start_month:
+                end_month = None
+        else:
+            end_month = None
 
         object.__setattr__(self, "start_month", start_month)
         object.__setattr__(self, "start_year", start_year)

@@ -72,9 +72,15 @@ async def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     if len(member_input["roles"]) == 0:
         raise Exception("Roles cannot be empty")
 
-    # New validator in Roles clears end date if it is before start;
-    # no need to raise here. Ensure inputs are reasonable downstream.
-
+    for i in member_input["roles"]:
+        if i["end_year"] and i["end_month"] and i["start_month"]:
+            sy, sm = i["start_year"], i["start_month"]
+            ey, em = i["end_year"], i["end_month"]
+            if (sy, sm) > (ey, em):
+                raise Exception("Start date cannot be after end date")
+        elif i["end_year"] and i["end_year"] < i["start_year"]:
+            raise Exception("Start date cannot be after end date")
+    
     club_category = await clubCategory(
         member_input["cid"], info.context.cookies
     )
@@ -82,27 +88,21 @@ async def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
 
     current_time = datetime.now(ist)
     time_str = current_time.strftime("%d-%m-%Y %I:%M %p IST")
-    now_m, now_y = datetime.now().month, datetime.now().year
 
-    Month_to_be_assigned = 1
     roles = []
     for role in member_input["roles"]:
         # Assign start_month if missing and start_year is present
-        if "start_year" in role and (
-            "start_month" not in role or role["start_month"] is None
-        ):
-            role["start_month"] = Month_to_be_assigned
-        # Assign end_month if missing and end_year is present
-        if (
-            "end_year" in role
-            and role["end_year"] is not None
-            and ("end_month" not in role or role["end_month"] is None)
-        ):
-            role["end_month"] = Month_to_be_assigned
+        now_m, now_y = datetime.now().month, datetime.now().year
         sm, sy = role["start_month"], role["start_year"]
-        if (sy, sm) > (now_y, now_m):
+        if sm is None or (sy, sm) > (now_y, now_m):
             role["start_month"] = now_m
             role["start_year"] = now_y
+            role["end_month"] = None
+            role["end_year"] = None
+
+        sm, sy = role["start_month"], role["start_year"]
+        em, ey = role["end_month"], role["end_year"]
+        if ey is None or em is None or (sy > ey or (sy==ey and sm>em)):
             role["end_month"] = None
             role["end_year"] = None
         if auto_approve:
@@ -162,11 +162,13 @@ async def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
         raise Exception("Roles cannot be empty")
 
     for i in member_input["roles"]:
-        if i["end_year"] is not None and i["end_month"] is not None:
+        if i["end_year"] and i["end_month"] and i["start_month"]:
             sy, sm = i["start_year"], i["start_month"]
             ey, em = i["end_year"], i["end_month"]
             if (sy, sm) > (ey, em):
                 raise Exception("Start date cannot be after end date")
+        elif i["end_year"] and i["end_year"] < i["start_year"]:
+            raise Exception("Start date cannot be after end date")
 
     member_ref = await membersdb.find_one(
         {
@@ -192,22 +194,18 @@ async def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     )
     auto_approve = user["role"] == "cc" or club_category in ["body", "admin"]
 
-    Month_to_be_assigned = 1
     roles = []
     for role in member_input["roles"]:
-        # Assign start_month if missing
-        if "start_month" not in role or role["start_month"] is None:
-            role["start_month"] = Month_to_be_assigned
-        # Assign end_month if missing and end_year is present
-        if role["end_year"] is not None and (
-            "end_month" not in role or role["end_month"] is None
-        ):
-            role["end_month"] = Month_to_be_assigned
         now_m, now_y = datetime.now().month, datetime.now().year
         sm, sy = role["start_month"], role["start_year"]
-        if (sy, sm) > (now_y, now_m):
+        if sm is None or (sy, sm) > (now_y, now_m):
             role["start_month"] = now_m
             role["start_year"] = now_y
+            role["end_month"] = None
+            role["end_year"] = None
+
+        em, ey = role["end_month"], role["end_year"]
+        if ey is None or em is None:
             role["end_month"] = None
             role["end_year"] = None
         role_new = role.copy()
