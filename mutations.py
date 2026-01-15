@@ -38,6 +38,8 @@ async def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
         Exception: A record with same uid and cid already exists
         Exception: Invalid User ID
         Exception: Roles cannot be empty
+        Exception: Start Month must be provided
+        Exception: End month must be provided
         Exception: Start date cannot be after end date
     """
 
@@ -73,6 +75,10 @@ async def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
         raise Exception("Roles cannot be empty")
 
     for i in member_input["roles"]:
+        if i["start_month"] is None:
+            raise Exception("Start month must be provided")
+        if i["end_year"] and i["end_month"] is None:
+            raise Exception("End month must be provided")
         if i["end_year"] and i["end_month"] and i["start_month"]:
             sy, sm = i["start_year"], i["start_month"]
             ey, em = i["end_year"], i["end_month"]
@@ -143,6 +149,8 @@ async def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
         Exception: Not Authenticated to access this API
         Exception: No such Record!
         Exception: Roles cannot be empty
+        Exception: Start Month must be provided
+        Exception: End month must be provided
         Exception: Start date cannot be after end date
     """
 
@@ -162,6 +170,10 @@ async def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
         raise Exception("Roles cannot be empty")
 
     for i in member_input["roles"]:
+        if i["start_month"] is None:
+            raise Exception("Start month must be provided")
+        if i["end_year"] and i["end_month"] is None:
+            raise Exception("End nonth must be provided")
         if i["end_year"] and i["end_month"] and i["start_month"]:
             sy, sm = i["start_year"], i["start_month"]
             ey, em = i["end_year"], i["end_month"]
