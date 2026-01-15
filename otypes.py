@@ -79,12 +79,14 @@ class MemberType:
 
 # INPUTS
 @strawberry.experimental.pydantic.input(
-    model=Roles, fields=["name", "start_my", "end_my"]
+    model=Roles,
+    fields=["name", "start_year", "end_year", "start_month", "end_month"],
 )
 class RolesInput:
     """
-    Input used to take a role's name, start and end
+    Input used to take a role's name, start and end dates
     """
+
     pass
 
 

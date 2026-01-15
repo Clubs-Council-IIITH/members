@@ -218,7 +218,8 @@ async def currentMembers(
                             "$and": [
                                 {"$ne": ["$$role.deleted", True]},
                                 {"$eq": ["$$role.approved", True]},
-                                {"$eq": ["$$role.end_my", None]},
+                                {"$eq": ["$$role.end_month", None]},
+                                {"$eq": ["$$role.end_year", None]},
                             ]
                         },
                     }
@@ -352,23 +353,25 @@ async def downloadMembersData(
             if i["deleted"] is True:
                 continue
 
-            # Determine role start/end month-year lists as (year, month)
-            r_start = [int(i["start_my"][1]), int(i["start_my"][0])]
-            if i["end_my"] is None:
+            # Determine role start/end (year, month)
+            r_start = [int(i["start_year"]), int(i["start_month"])]
+            if i.get("end_year") is None:
                 now = datetime.now()
                 r_end = [now.year, now.month]
             else:
-                r_end = [int(i["end_my"][1]), int(i["end_my"][0])]
+                r_end = [int(i["end_year"]), int(i["end_month"])]
 
-            if details.typeMembers == "current" and i["end_my"] is None:
+            if details.typeMembers == "current" and i.get("end_year") is None:
                 currentMember = True
             elif details.typeMembers == "past":
-                m_start, m_end, y_start, y_end = details.dateRoles
+                m_start, y_start, m_end, y_end = details.dateRoles
                 f_start = [y_start, m_start]
                 f_end = [y_end, m_end]
 
-                # Within timeframe if role start or end lies inside the filter window
-                if (f_start <= r_end <= f_end) or (f_start <= r_start <= f_end):
+                # Within timeframe if role start or end is inside filter window
+                if (f_start <= r_end <= f_end) or (
+                    f_start <= r_start <= f_end
+                ):
                     withinTimeframe = True
 
             roles_result.append(i)
@@ -405,7 +408,7 @@ async def downloadMembersData(
         "batch": "Batch",
         "email": "Email",
         "partofclub": "Is Part of Club",
-        "roles": "Roles [Role, Start Year, End Year]",
+        "roles": "Roles [Role, Start (M,Y), End (M,Y)]",
         "poc": "Is POC",
     }
 
@@ -453,7 +456,7 @@ async def downloadMembersData(
             elif field == "partofclub":
                 value = "No"
                 for role in member["roles"]:
-                    if role["end_my"] is None:
+                    if role.get("end_year") is None:
                         value = "Yes"
                         break
             elif field == "roles":
@@ -461,9 +464,15 @@ async def downloadMembersData(
                 for i in member["roles"]:
                     roleFormatting = [
                         i["name"],
-                        [int(i["start_my"][0]), int(i["start_my"][1])],
-                        [int(i["end_my"][0]), int(i["end_my"][1])]
-                          if i["end_my"] is not None else None]
+                        int(i["start_month"]),
+                        int(i["start_year"]),
+                        int(i["end_month"])
+                        if i.get("end_month") is not None
+                        else None,
+                        int(i["end_year"])
+                        if i.get("end_year") is not None
+                        else None,
+                    ]
                     if details.typeRoles == "all":
                         listOfRoles.append(roleFormatting)
                     elif details.typeRoles == "current":

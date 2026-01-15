@@ -72,12 +72,8 @@ async def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     if len(member_input["roles"]) == 0:
         raise Exception("Roles cannot be empty")
 
-    for i in member_input["roles"]:
-        if i["end_my"] is not None:
-            sm, sy = i["start_my"][0], i["start_my"][1]
-            em, ey = i["end_my"][0], i["end_my"][1]
-            if (sy, sm) > (ey, em):
-                raise Exception("Start date cannot be after end date")
+    # New validator in Roles clears end date if it is before start;
+    # no need to raise here. Ensure inputs are reasonable downstream.
 
     club_category = await clubCategory(
         member_input["cid"], info.context.cookies
@@ -88,12 +84,27 @@ async def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     time_str = current_time.strftime("%d-%m-%Y %I:%M %p IST")
     now_m, now_y = datetime.now().month, datetime.now().year
 
+    Month_to_be_assigned = 1
     roles = []
     for role in member_input["roles"]:
-        sm, sy = role["start_my"][0], role["start_my"][1]
+        # Assign start_month if missing and start_year is present
+        if "start_year" in role and (
+            "start_month" not in role or role["start_month"] is None
+        ):
+            role["start_month"] = Month_to_be_assigned
+        # Assign end_month if missing and end_year is present
+        if (
+            "end_year" in role
+            and role["end_year"] is not None
+            and ("end_month" not in role or role["end_month"] is None)
+        ):
+            role["end_month"] = Month_to_be_assigned
+        sm, sy = role["start_month"], role["start_year"]
         if (sy, sm) > (now_y, now_m):
-            role["start_my"] = [now_m, now_y]
-            role["end_my"] = None
+            role["start_month"] = now_m
+            role["start_year"] = now_y
+            role["end_month"] = None
+            role["end_year"] = None
         if auto_approve:
             role["approved"] = True
             role["approval_time"] = time_str
@@ -151,9 +162,9 @@ async def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
         raise Exception("Roles cannot be empty")
 
     for i in member_input["roles"]:
-        if i["end_my"] is not None:
-            sm, sy = i["start_my"][0], i["start_my"][1]
-            em, ey = i["end_my"][0], i["end_my"][1]
+        if i["end_year"] is not None and i["end_month"] is not None:
+            sy, sm = i["start_year"], i["start_month"]
+            ey, em = i["end_year"], i["end_month"]
             if (sy, sm) > (ey, em):
                 raise Exception("Start date cannot be after end date")
 
@@ -181,13 +192,24 @@ async def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     )
     auto_approve = user["role"] == "cc" or club_category in ["body", "admin"]
 
+    Month_to_be_assigned = 1
     roles = []
     for role in member_input["roles"]:
+        # Assign start_month if missing
+        if "start_month" not in role or role["start_month"] is None:
+            role["start_month"] = Month_to_be_assigned
+        # Assign end_month if missing and end_year is present
+        if role["end_year"] is not None and (
+            "end_month" not in role or role["end_month"] is None
+        ):
+            role["end_month"] = Month_to_be_assigned
         now_m, now_y = datetime.now().month, datetime.now().year
-        sm, sy = role["start_my"][0], role["start_my"][1]
+        sm, sy = role["start_month"], role["start_year"]
         if (sy, sm) > (now_y, now_m):
-            role["start_my"] = [now_m, now_y]
-            role["end_my"] = None
+            role["start_month"] = now_m
+            role["start_year"] = now_y
+            role["end_month"] = None
+            role["end_year"] = None
         role_new = role.copy()
 
         # if role's start_my, end_my, name is same as existing role,
@@ -195,8 +217,10 @@ async def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
         found_existing_role = False
         for i in member_roles:
             if (
-                i.start_my == role_new["start_my"]
-                and i.end_my == role_new["end_my"]
+                i.start_year == role_new.get("start_year")
+                and i.start_month == role_new.get("start_month")
+                and i.end_year == role_new.get("end_year")
+                and i.end_month == role_new.get("end_month")
                 and i.name == role_new["name"]
             ):
                 role_new["approved"] = i.approved
