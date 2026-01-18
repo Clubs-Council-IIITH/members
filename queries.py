@@ -353,13 +353,18 @@ async def downloadMembersData(
             if i["deleted"] is True:
                 continue
 
-            # Determine role start/end (year, month)
-            r_start = [int(i["start_year"]), int(i["start_month"])]
+            r_start = [
+                int(i["start_year"]),
+                int(i.get("start_month") or 1),
+            ]
             if i.get("end_year") is None:
                 now = datetime.now()
                 r_end = [now.year, now.month]
             else:
-                r_end = [int(i["end_year"]), int(i["end_month"])]
+                r_end = [
+                    int(i["end_year"]),
+                    int(i.get("end_month") or 12),
+                ]
 
             if details.typeMembers == "current" and i.get("end_year") is None:
                 currentMember = True
@@ -464,14 +469,12 @@ async def downloadMembersData(
                 for i in member["roles"]:
                     roleFormatting = [
                         i["name"],
-                        int(i["start_month"]),
+                        int(i["start_month"]) if i.get("start_month") is not None
+                          and i.get("start_year") is not None else None,
                         int(i["start_year"]),
-                        int(i["end_month"])
-                        if i.get("end_month") is not None
-                        else None,
-                        int(i["end_year"])
-                        if i.get("end_year") is not None
-                        else None,
+                        int(i["end_month"]) if i.get("end_month") is not None
+                          and i.get("end_year") is not None else None,
+                        int(i["end_year"]) if i.get("end_year") is not None else None,
                     ]
                     if details.typeRoles == "all":
                         listOfRoles.append(roleFormatting)
