@@ -218,7 +218,6 @@ async def currentMembers(
                             "$and": [
                                 {"$ne": ["$$role.deleted", True]},
                                 {"$eq": ["$$role.approved", True]},
-                                {"$eq": ["$$role.end_month", None]},
                                 {"$eq": ["$$role.end_year", None]},
                             ]
                         },
