@@ -93,7 +93,12 @@ class Roles(BaseModel):
             if end_year < start_year:
                 end_year = None
                 end_month = None
-            elif end_year == start_year and end_month and start_month and end_month < start_month:
+            elif (
+                end_year == start_year
+                and end_month
+                and start_month
+                and end_month < start_month
+            ):
                 end_month = None
         else:
             end_month = None

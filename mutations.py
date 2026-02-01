@@ -88,7 +88,7 @@ async def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
                 raise Exception("Start date cannot be after end date")
             if sm and em and sy == ey and sm > em:
                 raise Exception("Start date cannot be after end date")
-    
+
     club_category = await clubCategory(
         member_input["cid"], info.context.cookies
     )

@@ -468,12 +468,18 @@ async def downloadMembersData(
                 for i in member["roles"]:
                     roleFormatting = [
                         i["name"],
-                        int(i["start_month"]) if i.get("start_month") is not None
-                          and i.get("start_year") is not None else None,
+                        int(i["start_month"])
+                        if i.get("start_month") is not None
+                        and i.get("start_year") is not None
+                        else None,
                         int(i["start_year"]),
-                        int(i["end_month"]) if i.get("end_month") is not None
-                          and i.get("end_year") is not None else None,
-                        int(i["end_year"]) if i.get("end_year") is not None else None,
+                        int(i["end_month"])
+                        if i.get("end_month") is not None
+                        and i.get("end_year") is not None
+                        else None,
+                        int(i["end_year"])
+                        if i.get("end_year") is not None
+                        else None,
                     ]
                     if details.typeRoles == "all":
                         listOfRoles.append(roleFormatting)
