@@ -52,7 +52,7 @@ class Roles(BaseModel):
         end_year (Optional[int]): Year the role will/has ended. Defaults to
                                    None.
         start_month (Optional[int]): Month the role started
-        end_month (Optional[int]): Month the role will/end ended. Defaults to
+        end_month (Optional[int]): Month the role will/has ended. Defaults to
                                    None.
         approved (bool): Whether the role is approved. Defaults to False.
         approval_time (Optional[str]): Time the role was approve. Defaults to
@@ -84,13 +84,6 @@ class Roles(BaseModel):
 
         start_month = self.start_month
         start_year = self.start_year
-
-        if start_year is None:
-            raise ValueError("start year must be provided")
-        if not (2010 <= start_year <= 2050):
-            raise ValueError("start year must be between 2010 and 2050")
-        if start_month and not (1 <= start_month <= 12):
-            raise ValueError("start month must be between 1 and 12")
 
         end_month = self.end_month
         end_year = self.end_year

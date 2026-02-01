@@ -208,7 +208,8 @@ async def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
                 role["end_year"] = None
         role_new = role.copy()
 
-        # if role's start_my, end_my, name is same as existing role,
+        # if role's start_my (start Month, start Year), end_my (end Month, end Year), 
+        # name is same as existing role,
         # then keep the existing approved status
         found_existing_role = False
         for i in member_roles:
