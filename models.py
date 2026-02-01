@@ -7,6 +7,7 @@ from pydantic import (
     Field,
     ValidationInfo,
     field_validator,
+    model_validator,
 )
 from pydantic_core import core_schema
 
@@ -49,7 +50,10 @@ class Roles(BaseModel):
         name (str): Name of the role
         start_year (int): Year the role started
         end_year (Optional[int]): Year the role will/has ended. Defaults to
-                                  None.
+                                   None.
+        start_month (Optional[int]): Month the role started
+        end_month (Optional[int]): Month the role will/has ended. Defaults to
+                                   None.
         approved (bool): Whether the role is approved. Defaults to False.
         approval_time (Optional[str]): Time the role was approve. Defaults to
                                        None.
@@ -63,6 +67,8 @@ class Roles(BaseModel):
     name: str = Field(..., min_length=1, max_length=99)
     start_year: int = Field(..., ge=2010, le=2050)
     end_year: int | None = Field(None, gt=2010, le=2051)
+    start_month: int | None = Field(None, ge=1, le=12)
+    end_month: int | None = Field(None, ge=1, le=12)
     approved: bool = False
     approval_time: str | None = None
     rejected: bool = False
@@ -70,14 +76,34 @@ class Roles(BaseModel):
     deleted: bool = False
 
     # Validators
-    @field_validator("end_year")
-    def check_end_year(cls, value, info: ValidationInfo):
+    @model_validator(mode="after")
+    def validate_dates(self):
         """
-        Validates start and end year
+        Validate start and end dates
         """
-        if value is not None and value < info.data["start_year"]:
-            return None
-        return value
+
+        start_month = self.start_month
+        start_year = self.start_year
+
+        end_month = self.end_month
+        end_year = self.end_year
+
+        # If end < start, clear end
+        if end_year is not None:
+            if end_year < start_year:
+                end_year = None
+                end_month = None
+            elif end_year == start_year and end_month and start_month and end_month < start_month:
+                end_month = None
+        else:
+            end_month = None
+
+        object.__setattr__(self, "start_month", start_month)
+        object.__setattr__(self, "start_year", start_year)
+        object.__setattr__(self, "end_month", end_month)
+        object.__setattr__(self, "end_year", end_year)
+
+        return self
 
     @field_validator("rejected")
     def check_status(cls, value, info: ValidationInfo):
