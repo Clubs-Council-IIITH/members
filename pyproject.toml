@@ -1,7 +1,9 @@
 [project]
-name = "members"
+name = "members-subgraph"
 version = "1.0.0"
-requires-python = ">=3.10"
+readme = "README.md"
+
+requires-python = ">=3.11"
 dependencies = [
     "cachetools==6.2.1",
     "fastapi==0.116.1",
