@@ -48,51 +48,52 @@ PyObjectIdType = strawberry.scalar(
 
 
 # TYPES
-@strawberry.experimental.pydantic.type(model=Roles, all_fields=True)
+@strawberry.experimental.pydantic.type(model=Roles)
 class RolesType:
     """
     Type used to return all the details regarding a role of a club member
     """
+    rid: strawberry.auto
+    name: strawberry.auto
+    start_year: strawberry.auto
+    end_year: strawberry.auto
+    start_month: strawberry.auto
+    end_month: strawberry.auto
+    approved: strawberry.auto
+    approval_time: strawberry.auto
+    rejected: strawberry.auto
+    rejection_time: strawberry.auto
+    deleted: strawberry.auto
 
-    pass
 
-
-@strawberry.experimental.pydantic.type(
-    model=Member,
-    fields=[
-        "id",
-        "cid",
-        "uid",
-        "roles",
-        "poc",
-        "creation_time",
-        "last_edited_time",
-    ],
-)
+@strawberry.experimental.pydantic.type(model=Member)
 class MemberType:
     """
     Type used to return all the details of a club member
     """
-
-    pass
+    id: strawberry.auto
+    cid: strawberry.auto
+    uid: strawberry.auto
+    creation_time: strawberry.auto
+    last_edited_time: strawberry.auto
+    roles: strawberry.auto
+    poc: strawberry.auto
 
 
 # INPUTS
-@strawberry.experimental.pydantic.input(
-    model=Roles,
-    fields=["name", "start_year", "end_year", "start_month", "end_month"],
-)
+@strawberry.experimental.pydantic.input(model=Roles)
 class RolesInput:
     """
     Input used to take a role's name, start and end dates
     """
+    name: strawberry.auto
+    start_year: strawberry.auto
+    end_year: strawberry.auto
+    start_month: strawberry.auto
+    end_month: strawberry.auto
 
-    pass
 
-
-@strawberry.experimental.pydantic.input(
-    model=Member, fields=["cid", "uid", "roles"]
-)
+@strawberry.experimental.pydantic.input(model=Member)
 class FullMemberInput:
     """
     Input used to take a member's cid, uid, roles and poc(optional) fields.
@@ -100,7 +101,9 @@ class FullMemberInput:
     Attributes:
     poc (Optional[bool]): point of contact of the member. Defaults to None.
     """
-
+    cid: strawberry.auto
+    uid: strawberry.auto
+    roles: strawberry.auto
     poc: Optional[bool] = strawberry.UNSET
 
 
