@@ -48,22 +48,12 @@ PyObjectIdType = strawberry.scalar(
 
 
 # TYPES
-@strawberry.experimental.pydantic.type(model=Roles)
+@strawberry.experimental.pydantic.type(model=Roles, all_fields=True)
 class RolesType:
     """
     Type used to return all the details regarding a role of a club member
     """
-    rid: strawberry.auto
-    name: strawberry.auto
-    start_year: strawberry.auto
-    end_year: strawberry.auto
-    start_month: strawberry.auto
-    end_month: strawberry.auto
-    approved: strawberry.auto
-    approval_time: strawberry.auto
-    rejected: strawberry.auto
-    rejection_time: strawberry.auto
-    deleted: strawberry.auto
+    pass
 
 
 @strawberry.experimental.pydantic.type(model=Member)
