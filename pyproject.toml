@@ -3,14 +3,14 @@ name = "members-subgraph"
 version = "1.0.0"
 readme = "README.md"
 
-requires-python = ">=3.11"
+requires-python = ">=3.14"
 dependencies = [
-    "cachetools==6.2.1",
-    "fastapi==0.116.1",
+    "cachetools==7.0.2",
+    "fastapi==0.135.1",
     "httpx==0.28.1",
-    "pymongo==4.14.1",
-    "strawberry-graphql[debug-server]==0.281.0",
-    "uvicorn==0.35.0",
+    "pymongo==4.16.0",
+    "strawberry-graphql[cli,fastapi]==0.308.2",
+    "uvicorn==0.41.0",
 ]
 
 [tool.ruff]
