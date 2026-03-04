@@ -60,7 +60,7 @@ async def lifespan(app: FastAPI):
 
 
 # serve API with FastAPI router
-gql_app = GraphQLRouter(schema, graphql_ide="graphiql", context_getter=get_context)
+gql_app = GraphQLRouter(schema, context_getter=get_context)
 app = FastAPI(
     debug=DEBUG,
     title="CC Members Microservice",
