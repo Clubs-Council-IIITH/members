@@ -57,50 +57,50 @@ class RolesType:
     pass
 
 
-@strawberry.experimental.pydantic.type(
-    model=Member,
-    fields=[
-        "id",
-        "cid",
-        "uid",
-        "roles",
-        "poc",
-        "creation_time",
-        "last_edited_time",
-    ],
-)
+@strawberry.experimental.pydantic.type(model=Member)
 class MemberType:
     """
     Type used to return all the details of a club member
     """
 
-    pass
+    id: strawberry.auto
+    cid: strawberry.auto
+    uid: strawberry.auto
+    creation_time: strawberry.auto
+    last_edited_time: strawberry.auto
+    roles: strawberry.auto
+    poc: strawberry.auto
 
 
 # INPUTS
-@strawberry.experimental.pydantic.input(
-    model=Roles,
-    fields=["name", "start_year", "end_year", "start_month", "end_month"],
-)
+@strawberry.experimental.pydantic.input(model=Roles)
 class RolesInput:
     """
-    Input used to take a role's name, start and end dates
+    Input used to take a role's name, start and end dates.
     """
 
-    pass
+    name: strawberry.auto
+    start_year: strawberry.auto
+    end_year: strawberry.auto
+    start_month: strawberry.auto
+    end_month: strawberry.auto
 
 
-@strawberry.experimental.pydantic.input(
-    model=Member, fields=["cid", "uid", "roles"]
-)
+@strawberry.experimental.pydantic.input(model=Member)
 class FullMemberInput:
     """
     Input used to take a member's cid, uid, roles and poc(optional) fields.
 
     Attributes:
-    poc (Optional[bool]): point of contact of the member. Defaults to None.
+        cid (str): member's cid.
+        uid (str): member's uid.
+        roles (List[RolesInput]): List of roles of the member.
+        poc (Optional[bool]): point of contact of the member. Defaults to None.
     """
 
+    cid: strawberry.auto
+    uid: strawberry.auto
+    roles: strawberry.auto
     poc: Optional[bool] = strawberry.UNSET
 
 
@@ -110,9 +110,9 @@ class SimpleMemberInput:
     Input used to take a member's cid, uid and rid(optional) fields
 
     Attributes:
-    cid (str): member's cid.
-    uid (str): member's uid.
-    rid (str): member's rid.
+        cid (str): member's cid.
+        uid (str): member's uid.
+        rid (str): member's rid.
     """
 
     cid: str
@@ -126,7 +126,7 @@ class SimpleClubInput:
     Input used to take a club's cid
 
     Attributes:
-    cid (str): club's cid.
+        cid (str): club's cid.
     """
 
     cid: str
@@ -138,14 +138,16 @@ class MemberInputDataReportDetails:
     Input used to take in search parameters for the member data report
 
     Attributes:
-    clubid (List[str]): List of club ids to filter members by.
-        If None, no filtering by club ids is applied.
-    fields (List[str]): List of member fields to include in the report.
-    typeMembers (str): Type of members to be included in report.
-    typeRoles (str): Type of roles to be included in report.Default is None.
-    batchFiltering (List[str]): Batch based search to be included in the fetch.
-    batchFilteringType (List[str]): Type of filter, seperate for ug and pg.
-    dateRoles (List[int]): date filters for the roles of the members.
+        clubid (List[str]): List of club ids to filter members by.
+            If None, no filtering by club ids is applied.
+        fields (List[str]): List of member fields to include in the report.
+        typeMembers (str): Type of members to be included in report.
+        typeRoles (str): Type of roles to be included in report.
+                    Default is None.
+        batchFiltering (List[str]): Batch based search to be included
+                    in the fetch.
+        batchFilteringType (List[str]): Type of filter, seperate for ug and pg.
+        dateRoles (List[int]): date filters for the roles of the members.
     """
 
     clubid: List[str] | None
@@ -175,9 +177,9 @@ class MemberCSVResponse:
     Type used to return the csv file and the operation message
 
     Attributes:
-    csvFile (str): the csv file as a string.
-    successMessage (str): message in case of successful operation.
-    errorMessage (str): message in case of error.
+        csvFile (str): the csv file as a string.
+        successMessage (str): message in case of successful operation.
+        errorMessage (str): message in case of error.
     """
 
     csvFile: str
