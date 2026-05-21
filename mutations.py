@@ -53,7 +53,7 @@ async def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
 
     if (member_input["cid"] != uid or user["role"] != "club") and user[
         "role"
-    ] != "cc":
+    ] not in ["cc", "slo"]:
         raise Exception("Not Authenticated to access this API")
 
     if await membersdb.find_one(
@@ -92,7 +92,7 @@ async def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     club_category = await clubCategory(
         member_input["cid"], info.context.cookies
     )
-    auto_approve = user["role"] == "cc" or club_category in ["body", "admin"]
+    auto_approve = user["role"] in ["cc", "slo"] or club_category in ["body", "admin"]
 
     current_time = datetime.now(ist)
     time_str = current_time.strftime("%d-%m-%Y %I:%M %p IST")
@@ -157,7 +157,7 @@ async def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
 
     if (member_input["cid"] != uid or user["role"] != "club") and user[
         "role"
-    ] != "cc":
+    ] not in ["cc", "slo"]:
         raise Exception("Not Authenticated to access this API")
 
     if len(member_input["roles"]) == 0:
@@ -196,7 +196,7 @@ async def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     club_category = await clubCategory(
         member_input["cid"], info.context.cookies
     )
-    auto_approve = user["role"] == "cc" or club_category in ["body", "admin"]
+    auto_approve = user["role"] in ["cc", "slo"] or club_category in ["body", "admin"]
 
     roles = []
     for role in member_input["roles"]:
@@ -287,7 +287,7 @@ async def deleteMember(
 
     if (member_input["cid"] != uid or user["role"] != "club") and user[
         "role"
-    ] != "cc":
+    ] not in ["cc", "slo"]:
         raise Exception("Not Authenticated to access this API")
 
     existing_data = await membersdb.find_one(
@@ -363,7 +363,7 @@ async def approveMember(
 
     member_input = jsonable_encoder(memberInput)
 
-    if user["role"] != "cc":
+    if user["role"] not in ["cc", "slo"]:
         raise Exception("Not Authenticated to access this API")
 
     existing_data = await membersdb.find_one(
@@ -437,7 +437,7 @@ async def rejectMember(
 
     member_input = jsonable_encoder(memberInput)
 
-    if user["role"] != "cc":
+    if user["role"] not in ["cc", "slo"]:
         raise Exception("Not Authenticated to access this API")
 
     existing_data = await membersdb.find_one(
@@ -541,7 +541,7 @@ async def updateMembersCid(
 
     user = info.context.user
 
-    if user is None or user["role"] not in ["cc"]:
+    if user is None or user["role"] not in ["cc", "slo"]:
         raise Exception("Not Authenticated!")
 
     if inter_communication_secret != inter_communication_secret_global:
