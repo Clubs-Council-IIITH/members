@@ -58,7 +58,7 @@ async def member(memberInput: SimpleMemberInput, info: Info) -> MemberType:
 
     if (member_input["cid"] != uid or user["role"] != "club") and user[
         "role"
-    ] != "cc":
+    ] not in ["cc", "slo"]:
         raise Exception("Not Authenticated to access this API")
 
     member = await membersdb.find_one(
@@ -113,7 +113,7 @@ async def memberRoles(uid: str, info: Info) -> List[MemberType]:
         for i in roles:
             if i["deleted"]:
                 continue
-            if role != "cc" and not i["approved"]:
+            if role not in ["cc", "slo"] and not i["approved"]:
                 continue
             roles_result.append(i)
         if roles_result:
@@ -240,7 +240,7 @@ async def currentMembers(
 async def pendingMembers(info: Info) -> List[MemberType]:
     """
     Returns the pending members of all clubs with their non-deleted,
-    pending roles for CC.
+    pending roles for CC and SLO.
     Args:
         info (otypes.Info): Contains the logged in user's details.
 
@@ -251,7 +251,7 @@ async def pendingMembers(info: Info) -> List[MemberType]:
         Exception: Not Authenticated
     """
     user = info.context.user
-    if user is None or user["role"] not in ["cc"]:
+    if user is None or user["role"] not in ["cc", "slo"]:
         raise Exception("Not Authenticated")
     pipeline = [
         {
