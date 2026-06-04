@@ -92,7 +92,10 @@ async def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     club_category = await clubCategory(
         member_input["cid"], info.context.cookies
     )
-    auto_approve = user["role"] in ["cc", "slo"] or club_category in ["body", "admin"]
+    auto_approve = user["role"] in ["cc", "slo"] or club_category in [
+        "body",
+        "admin",
+    ]
 
     current_time = datetime.now(ist)
     time_str = current_time.strftime("%d-%m-%Y %I:%M %p IST")
@@ -196,7 +199,10 @@ async def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     club_category = await clubCategory(
         member_input["cid"], info.context.cookies
     )
-    auto_approve = user["role"] in ["cc", "slo"] or club_category in ["body", "admin"]
+    auto_approve = user["role"] in ["cc", "slo"] or club_category in [
+        "body",
+        "admin",
+    ]
 
     roles = []
     for role in member_input["roles"]:
