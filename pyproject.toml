@@ -5,11 +5,11 @@ readme = "README.md"
 
 requires-python = ">=3.14"
 dependencies = [
-    "cachetools==7.0.5",
-    "fastapi~=0.135.3",
+    "cachetools==7.1.4",
+    "fastapi~=0.138.0",
     "httpx==0.28.1",
-    "pymongo==4.16.0",
-    "strawberry-graphql[cli]==0.313.0",
+    "pymongo==4.17.0",
+    "strawberry-graphql[cli]==0.319.0",
 ]
 
 [tool.ruff]
