@@ -74,6 +74,7 @@ async def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     if len(member_input["roles"]) == 0:
         raise Exception("Roles cannot be empty")
 
+    current_time = datetime.now(ist)
     for i in member_input["roles"]:
         sy, sm = i["start_year"], i.get("start_month")
         ey, em = i.get("end_year"), i.get("end_month")
@@ -83,7 +84,11 @@ async def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
         # If end_year is provided, end_month is compulsory
         if ey is not None and em is None:
             raise Exception("End month must be provided")
-        if ey and sy:
+        if sy > current_time.year or (sm and sy == current_time.year and sm > current_time.month):
+            raise Exception("Start date cannot be in the future")
+        if ey:
+            if ey > current_time.year or (em and ey == current_time.year and em > current_time.month):
+                raise Exception("End date cannot be in the future")
             if ey < sy:
                 raise Exception("Start date cannot be after end date")
             if sm and em and sy == ey and sm > em:
@@ -166,12 +171,17 @@ async def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     if len(member_input["roles"]) == 0:
         raise Exception("Roles cannot be empty")
 
+    current_time = datetime.now(ist)
     for i in member_input["roles"]:
         sy, sm = i["start_year"], i.get("start_month")
         ey, em = i.get("end_year"), i.get("end_month")
         if ey is not None and em is None:
             raise Exception("End month must be provided")
-        if ey and sy:
+        if sy > current_time.year or (sm and sy == current_time.year and sm > current_time.month):
+            raise Exception("Start date cannot be in the future")
+        if ey:
+            if ey > current_time.year or (em and ey == current_time.year and em > current_time.month):
+                raise Exception("End date cannot be in the future")
             if ey < sy:
                 raise Exception("Start date cannot be after end date")
             if sm and em and sy == ey and sm > em:
