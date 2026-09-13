@@ -20,6 +20,7 @@ Attributes:
 from os import getenv
 
 from pymongo import AsyncMongoClient
+from pymongo.errors import PyMongoError
 
 # get mongodb URI and database name from environment variale
 MONGO_URI = "mongodb://{}:{}@mongo:{}/".format(
@@ -46,5 +47,5 @@ async def create_index():
             )
             print("The members index was created.")
         print(await membersdb.index_information())
-    except Exception:
-        pass
+    except PyMongoError as e:
+        print(f"Warning: could not ensure members index: {e}")

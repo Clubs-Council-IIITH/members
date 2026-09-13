@@ -1,8 +1,14 @@
 import asyncio
+import json
 import os
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
+ist = ZoneInfo("Asia/Kolkata")
+
+import httpx
 from cachetools import TTLCache
+from graphql import GraphQLError
 from httpx import AsyncClient
 
 from db import membersdb
@@ -40,7 +46,7 @@ async def non_deleted_members(member_input) -> MemberType:
         {"_id": 0},
     )
     if updated_sample is None:
-        raise Exception("No such Record")
+        raise GraphQLError("No such Record")
 
     roles = []
     for i in updated_sample["roles"]:
@@ -73,7 +79,7 @@ async def unique_roles_id(uid, cid):
                                     "rid": {
                                         "$toString": {
                                             "$add": [
-                                                {"$toLong": datetime.now()},
+                                                {"$toLong": datetime.now(ist)},
                                                 "$$this",
                                             ]
                                         }
@@ -128,7 +134,7 @@ async def getUser(uid, cookies=None) -> dict | None:
                 json={"query": query, "variables": variables},
             )
         return result.json()["data"]["userProfile"]
-    except Exception:
+    except httpx.HTTPError, json.JSONDecodeError, KeyError:
         return None
 
 
@@ -169,7 +175,7 @@ async def getUsersByList(uids: list, cookies=None) -> dict | None:
             userProfiles[uids[i]] = result.json()["data"]["usersByList"][i]
 
         return userProfiles
-    except Exception:
+    except httpx.HTTPError, json.JSONDecodeError, KeyError:
         return None
 
 
@@ -188,7 +194,7 @@ async def getUsersByBatch(
         (dict | None): keys of user uids and value of user details
     """
     try:
-        batchDetails = dict()
+        batchDetails = {}
         query = """
             query GetUsersByBatch($batchYear: Int!, $ug: Boolean, $pg: Boolean) {
                 usersByBatch(batchYear: $batchYear, ug: $ug, pg: $pg) {
@@ -210,8 +216,8 @@ async def getUsersByBatch(
         for user in result.json()["data"]["usersByBatch"]:
             batchDetails[user["uid"]] = user
         return batchDetails
-    except Exception:
-        return dict()
+    except httpx.HTTPError, json.JSONDecodeError, KeyError:
+        return {}
 
 
 # get club name from club id
@@ -246,7 +252,7 @@ async def getClubDetails(
                 json={"query": query, "variables": variables},
             )
         return result.json()["data"]["club"]
-    except Exception:
+    except httpx.HTTPError, json.JSONDecodeError, KeyError:
         return {}
 
 
@@ -275,7 +281,7 @@ async def getClubs(cookies=None) -> list:
                 json={"query": query},
             )
         return result.json()["data"]["allClubs"]
-    except Exception:
+    except httpx.HTTPError, json.JSONDecodeError, KeyError:
         return []
 
 
@@ -297,7 +303,7 @@ async def clubCategory(cid: str, cookies: dict | None = None) -> str:
     club_details = await getClubDetails(cid, cookies)
 
     if not club_details or "category" not in club_details:
-        raise Exception(f"Club with cid {cid} not found.")
+        raise GraphQLError(f"Club with cid {cid} not found.")
 
     category = club_details["category"]
     async with cache_lock:

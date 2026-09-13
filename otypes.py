@@ -4,7 +4,6 @@ Types and Inputs
 
 import json
 from functools import cached_property
-from typing import Dict, List, Optional, Union
 
 import strawberry
 from strawberry.fastapi import BaseContext
@@ -22,7 +21,7 @@ class Context(BaseContext):
     """
 
     @cached_property
-    def user(self) -> Union[Dict, None]:
+    def user(self) -> dict | None:
         if not self.request:
             return None
 
@@ -30,7 +29,7 @@ class Context(BaseContext):
         return user
 
     @cached_property
-    def cookies(self) -> Union[Dict, None]:
+    def cookies(self) -> dict | None:
         if not self.request:
             return None
 
@@ -53,8 +52,6 @@ class RolesType:
     """
     Type used to return all the details regarding a role of a club member
     """
-
-    pass
 
 
 @strawberry.experimental.pydantic.type(model=Member)
@@ -101,7 +98,7 @@ class FullMemberInput:
     cid: strawberry.auto
     uid: strawberry.auto
     roles: strawberry.auto
-    poc: Optional[bool] = strawberry.UNSET
+    poc: bool | None = strawberry.UNSET
 
 
 @strawberry.input
@@ -117,7 +114,7 @@ class SimpleMemberInput:
 
     cid: str
     uid: str
-    rid: Optional[str]
+    rid: str | None
 
 
 @strawberry.input
@@ -150,15 +147,15 @@ class MemberInputDataReportDetails:
         dateRoles (List[int]): date filters for the roles of the members.
     """
 
-    clubid: List[str] | None
-    fields: List[str]
+    clubid: list[str] | None
+    fields: list[str]
     typeMembers: str
     typeRoles: str | None
-    batchFiltering: List[str]
-    batchFilteringType: List[str] = strawberry.field(
+    batchFiltering: list[str]
+    batchFilteringType: list[str] = strawberry.field(
         default_factory=lambda: ["ug", "pg"]
     )
-    dateRoles: List[int] | None
+    dateRoles: list[int] | None
 
     def __post_init__(self):
         if len(self.batchFilteringType) > 2:

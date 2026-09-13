@@ -1,3 +1,5 @@
+from graphql import GraphQLError
+
 """
 Mutation resolvers
 """
@@ -45,7 +47,7 @@ async def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
 
     user = info.context.user
     if user is None:
-        raise Exception("Not Authenticated")
+        raise GraphQLError("Not Authenticated")
 
     role = user["role"]
     uid = user["uid"]
@@ -54,7 +56,7 @@ async def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     if (member_input["cid"] != uid or user["role"] != "club") and user[
         "role"
     ] not in ["cc", "slo"]:
-        raise Exception("Not Authenticated to access this API")
+        raise GraphQLError("Not Authenticated to access this API")
 
     if await membersdb.find_one(
         {
@@ -64,15 +66,15 @@ async def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
             ]
         }
     ):
-        raise Exception("A record with same uid and cid already exists")
+        raise GraphQLError("A record with same uid and cid already exists")
 
     # Check whether this uid is valid or not
     userMember = await getUser(member_input["uid"], info.context.cookies)
     if userMember is None:
-        raise Exception("Invalid User ID")
+        raise GraphQLError("Invalid User ID")
 
     if len(member_input["roles"]) == 0:
-        raise Exception("Roles cannot be empty")
+        raise GraphQLError("Roles cannot be empty")
 
     current_time = datetime.now(ist)
     for i in member_input["roles"]:
@@ -80,19 +82,23 @@ async def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
         ey, em = i.get("end_year"), i.get("end_month")
         # Month is compulsory for new data: require start_month
         if sm is None:
-            raise Exception("Start Month must be provided")
+            raise GraphQLError("Start Month must be provided")
         # If end_year is provided, end_month is compulsory
         if ey is not None and em is None:
-            raise Exception("End month must be provided")
-        if sy > current_time.year or (sm and sy == current_time.year and sm > current_time.month):
-            raise Exception("Start date cannot be in the future")
+            raise GraphQLError("End month must be provided")
+        if sy > current_time.year or (
+            sm and sy == current_time.year and sm > current_time.month
+        ):
+            raise GraphQLError("Start date cannot be in the future")
         if ey:
-            if ey > current_time.year or (em and ey == current_time.year and em > current_time.month):
-                raise Exception("End date cannot be in the future")
+            if ey > current_time.year or (
+                em and ey == current_time.year and em > current_time.month
+            ):
+                raise GraphQLError("End date cannot be in the future")
             if ey < sy:
-                raise Exception("Start date cannot be after end date")
+                raise GraphQLError("Start date cannot be after end date")
             if sm and em and sy == ey and sm > em:
-                raise Exception("Start date cannot be after end date")
+                raise GraphQLError("Start date cannot be after end date")
 
     club_category = await clubCategory(
         member_input["cid"], info.context.cookies
@@ -109,10 +115,9 @@ async def createMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     for role in member_input["roles"]:
         sm, sy = role.get("start_month"), role["start_year"]
         em, ey = role.get("end_month"), role.get("end_year")
-        if ey:
-            if sy > ey or (sm and em and sy == ey and sm > em):
-                role["end_month"] = None
-                role["end_year"] = None
+        if ey and (sy > ey or (sm and em and sy == ey and sm > em)):
+            role["end_month"] = None
+            role["end_year"] = None
         if auto_approve:
             role["approved"] = True
             role["approval_time"] = time_str
@@ -158,7 +163,7 @@ async def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
 
     user = info.context.user
     if user is None:
-        raise Exception("Not Authenticated")
+        raise GraphQLError("Not Authenticated")
 
     uid = user["uid"]
     member_input = jsonable_encoder(memberInput.to_pydantic())
@@ -166,26 +171,30 @@ async def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     if (member_input["cid"] != uid or user["role"] != "club") and user[
         "role"
     ] not in ["cc", "slo"]:
-        raise Exception("Not Authenticated to access this API")
+        raise GraphQLError("Not Authenticated to access this API")
 
     if len(member_input["roles"]) == 0:
-        raise Exception("Roles cannot be empty")
+        raise GraphQLError("Roles cannot be empty")
 
     current_time = datetime.now(ist)
     for i in member_input["roles"]:
         sy, sm = i["start_year"], i.get("start_month")
         ey, em = i.get("end_year"), i.get("end_month")
         if ey is not None and em is None:
-            raise Exception("End month must be provided")
-        if sy > current_time.year or (sm and sy == current_time.year and sm > current_time.month):
-            raise Exception("Start date cannot be in the future")
+            raise GraphQLError("End month must be provided")
+        if sy > current_time.year or (
+            sm and sy == current_time.year and sm > current_time.month
+        ):
+            raise GraphQLError("Start date cannot be in the future")
         if ey:
-            if ey > current_time.year or (em and ey == current_time.year and em > current_time.month):
-                raise Exception("End date cannot be in the future")
+            if ey > current_time.year or (
+                em and ey == current_time.year and em > current_time.month
+            ):
+                raise GraphQLError("End date cannot be in the future")
             if ey < sy:
-                raise Exception("Start date cannot be after end date")
+                raise GraphQLError("Start date cannot be after end date")
             if sm and em and sy == ey and sm > em:
-                raise Exception("Start date cannot be after end date")
+                raise GraphQLError("Start date cannot be after end date")
 
     member_ref = await membersdb.find_one(
         {
@@ -197,7 +206,7 @@ async def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     )
 
     if member_ref is None:
-        raise Exception("No such Record!")
+        raise GraphQLError("No such Record!")
     else:
         member_ref = Member.model_validate(member_ref)
 
@@ -218,10 +227,9 @@ async def editMember(memberInput: FullMemberInput, info: Info) -> MemberType:
     for role in member_input["roles"]:
         sm, sy = role.get("start_month"), role["start_year"]
         em, ey = role.get("end_month"), role.get("end_year")
-        if ey:
-            if sy > ey or (sm and em and sy == ey and sm > em):
-                role["end_month"] = None
-                role["end_year"] = None
+        if ey and (sy > ey or (sm and em and sy == ey and sm > em)):
+            role["end_month"] = None
+            role["end_year"] = None
         role_new = role.copy()
 
         # if role's start_my, end_my is same as existing role,
@@ -292,11 +300,11 @@ async def deleteMember(
         Exception: Not Authenticated
         Exception: Not Authenticated to access this API
         Exception: No such Record
-    """  # noqa: E501
+    """
 
     user = info.context.user
     if user is None:
-        raise Exception("Not Authenticated")
+        raise GraphQLError("Not Authenticated")
 
     uid = user["uid"]
     member_input = jsonable_encoder(memberInput)
@@ -304,7 +312,7 @@ async def deleteMember(
     if (member_input["cid"] != uid or user["role"] != "club") and user[
         "role"
     ] not in ["cc", "slo"]:
-        raise Exception("Not Authenticated to access this API")
+        raise GraphQLError("Not Authenticated to access this API")
 
     existing_data = await membersdb.find_one(
         {
@@ -316,7 +324,7 @@ async def deleteMember(
         {"_id": 0},
     )
     if existing_data is None:
-        raise Exception("No such Record")
+        raise GraphQLError("No such Record")
 
     if "rid" not in member_input or not member_input["rid"]:
         await membersdb.delete_one(
@@ -375,12 +383,12 @@ async def approveMember(
 
     user = info.context.user
     if user is None:
-        raise Exception("Not Authenticated")
+        raise GraphQLError("Not Authenticated")
 
     member_input = jsonable_encoder(memberInput)
 
     if user["role"] not in ["cc", "slo"]:
-        raise Exception("Not Authenticated to access this API")
+        raise GraphQLError("Not Authenticated to access this API")
 
     existing_data = await membersdb.find_one(
         {
@@ -392,10 +400,10 @@ async def approveMember(
         {"_id": 0},
     )
     if existing_data is None:
-        raise Exception("No such Record")
+        raise GraphQLError("No such Record")
 
     # if "rid" not in member_input:
-    #     raise Exception("rid is required")
+    #     raise GraphQLError("rid is required")
 
     current_time = datetime.now(ist)
     time_str = current_time.strftime("%d-%m-%Y %I:%M %p IST")
@@ -449,12 +457,12 @@ async def rejectMember(
 
     user = info.context.user
     if user is None:
-        raise Exception("Not Authenticated")
+        raise GraphQLError("Not Authenticated")
 
     member_input = jsonable_encoder(memberInput)
 
     if user["role"] not in ["cc", "slo"]:
-        raise Exception("Not Authenticated to access this API")
+        raise GraphQLError("Not Authenticated to access this API")
 
     existing_data = await membersdb.find_one(
         {
@@ -466,10 +474,10 @@ async def rejectMember(
         {"_id": 0},
     )
     if existing_data is None:
-        raise Exception("No such Record")
+        raise GraphQLError("No such Record")
 
     # if "rid" not in member_input:
-    #     raise Exception("rid is required")
+    #     raise GraphQLError("rid is required")
 
     current_time = datetime.now(ist)
     time_str = current_time.strftime("%d-%m-%Y %I:%M %p IST")
@@ -504,14 +512,14 @@ async def rejectMember(
 # MemberType:
 #     user = info.context.user
 #     if user is None:
-#         raise Exception("Not Authenticated")
+#         raise GraphQLError("Not Authenticated")
 
 #     role = user["role"]
 #     uid = user["uid"]
 #     member_input = jsonable_encoder(memberInput.to_pydantic())
 
 #     if member_input["cid"] != uid and role != "club":
-#         raise Exception("Not Authenticated to access this API")
+#         raise GraphQLError("Not Authenticated to access this API")
 
 #     created_id = clubsdb.update_one(
 #         {
@@ -558,10 +566,10 @@ async def updateMembersCid(
     user = info.context.user
 
     if user is None or user["role"] not in ["cc", "slo"]:
-        raise Exception("Not Authenticated!")
+        raise GraphQLError("Not Authenticated!")
 
     if inter_communication_secret != inter_communication_secret_global:
-        raise Exception("Authentication Error! Invalid secret!")
+        raise GraphQLError("Authentication Error! Invalid secret!")
 
     updation = {
         "$set": {

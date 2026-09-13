@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any
 
 from bson import ObjectId
 from pydantic import (
@@ -151,11 +151,11 @@ class Member(BaseModel):
     uid: str = Field(..., description="User ID")
     creation_time: str | None = None
     last_edited_time: str | None = None
-    roles: List[Roles] = Field(
+    roles: list[Roles] = Field(
         ..., description="List of Roles for that specific person"
     )
 
-    poc: bool = Field(default_factory=(lambda: 0 == 1), description="Club POC")
+    poc: bool = Field(default=False, description="Club POC")
 
     @field_validator("uid", mode="before")
     @classmethod

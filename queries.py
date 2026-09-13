@@ -1,3 +1,5 @@
+from graphql import GraphQLError
+
 """
 Query resolvers
 """
@@ -5,7 +7,9 @@ Query resolvers
 import csv
 import io
 from datetime import datetime
-from typing import List
+from zoneinfo import ZoneInfo
+
+ist = ZoneInfo("Asia/Kolkata")
 
 import strawberry
 from fastapi.encoders import jsonable_encoder
@@ -51,7 +55,7 @@ async def member(memberInput: SimpleMemberInput, info: Info) -> MemberType:
 
     user = info.context.user
     if user is None:
-        raise Exception("Not Authenticated")
+        raise GraphQLError("Not Authenticated")
 
     uid = user["uid"]
     member_input = jsonable_encoder(memberInput)
@@ -59,7 +63,7 @@ async def member(memberInput: SimpleMemberInput, info: Info) -> MemberType:
     if (member_input["cid"] != uid or user["role"] != "club") and user[
         "role"
     ] not in ["cc", "slo"]:
-        raise Exception("Not Authenticated to access this API")
+        raise GraphQLError("Not Authenticated to access this API")
 
     member = await membersdb.find_one(
         {
@@ -71,13 +75,13 @@ async def member(memberInput: SimpleMemberInput, info: Info) -> MemberType:
         {"_id": 0},
     )
     if member is None:
-        raise Exception("No such Record")
+        raise GraphQLError("No such Record")
 
     return MemberType.from_pydantic(Member.model_validate(member))
 
 
 @strawberry.field
-async def memberRoles(uid: str, info: Info) -> List[MemberType]:
+async def memberRoles(uid: str, info: Info) -> list[MemberType]:
     """
     Fetches a club memeber along with his roles
 
@@ -126,7 +130,7 @@ async def memberRoles(uid: str, info: Info) -> List[MemberType]:
 
 
 @strawberry.field
-async def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
+async def members(clubInput: SimpleClubInput, info: Info) -> list[MemberType]:
     """
     Returns all the members of a club.
 
@@ -154,10 +158,11 @@ async def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
     role_conditions = [{"$ne": ["$$role.deleted", True]}]
 
     # for public users, only show approved roles
-    if role == "public":
-        role_conditions.append({"$eq": ["$$role.approved", True]})
-    # for other clubs show only approved users
-    elif role == "club" and user.get("uid") != club_input["cid"]:
+    if (
+        role == "public"
+        or role == "club"
+        and user.get("uid") != club_input["cid"]
+    ):
         role_conditions.append({"$eq": ["$$role.approved", True]})
     # for CC and own club, show both approved and pending roles
 
@@ -189,7 +194,7 @@ async def members(clubInput: SimpleClubInput, info: Info) -> List[MemberType]:
 @strawberry.field
 async def currentMembers(
     clubInput: SimpleClubInput, info: Info
-) -> List[MemberType]:
+) -> list[MemberType]:
     """
     Returns the current members of a club with their non-deleted,
     approved roles, for Public.
@@ -237,7 +242,7 @@ async def currentMembers(
 
 
 @strawberry.field
-async def pendingMembers(info: Info) -> List[MemberType]:
+async def pendingMembers(info: Info) -> list[MemberType]:
     """
     Returns the pending members of all clubs with their non-deleted,
     pending roles for CC and SLO.
@@ -252,7 +257,7 @@ async def pendingMembers(info: Info) -> List[MemberType]:
     """
     user = info.context.user
     if user is None or user["role"] not in ["cc", "slo"]:
-        raise Exception("Not Authenticated")
+        raise GraphQLError("Not Authenticated")
     pipeline = [
         {
             "$addFields": {
@@ -304,17 +309,19 @@ async def downloadMembersData(
     """
     user = info.context.user
     if user is None:
-        raise Exception("You do not have permission to access this resource.")
+        raise GraphQLError(
+            "You do not have permission to access this resource."
+        )
 
     allClubs = await getClubs(info.context.cookies)
     if len(allClubs) == 0:
-        raise Exception("No clubs found.")
+        raise GraphQLError("No clubs found.")
 
     if "allclubs" not in details.clubid:
         clubList = details.clubid
     else:
         clubList = [club["cid"] for club in allClubs]
-        curr_date = datetime.now()
+        curr_date = datetime.now(ist)
         day = curr_date.day
         month = curr_date.month
         farewell_time = (month == 3 and day >= 15) or (
@@ -333,14 +340,14 @@ async def downloadMembersData(
         ug = "ug" in details.batchFilteringType
         pg = "pg" in details.batchFilteringType
 
-        batchDetails = dict()
+        batchDetails = {}
         for batch in details.batchFiltering:
             batch_users = await getUsersByBatch(
                 int(batch), ug, pg, info.context.cookies
             )
             if batch_users is not None:
                 batchDetails.update(batch_users)
-    userDetailsList = dict()
+    userDetailsList = {}
     userIds = []
     for result in results:
         roles = result["roles"]
@@ -357,7 +364,7 @@ async def downloadMembersData(
                 int(i.get("start_month") or 1),
             ]
             if i.get("end_year") is None:
-                now = datetime.now()
+                now = datetime.now(ist)
                 r_end = [now.year, now.month]
             else:
                 r_end = [
@@ -383,11 +390,13 @@ async def downloadMembersData(
         if len(roles_result) > 0:
             append = False
             result["roles"] = roles_result
-            if details.typeMembers == "all":
-                append = True
-            elif details.typeMembers == "current" and currentMember:
-                append = True
-            elif details.typeMembers == "past" and withinTimeframe:
+            if (
+                details.typeMembers == "all"
+                or details.typeMembers == "current"
+                and currentMember
+                or details.typeMembers == "past"
+                and withinTimeframe
+            ):
                 append = True
 
             if "allBatches" not in details.batchFiltering and append:
@@ -430,7 +439,7 @@ async def downloadMembersData(
     csv_writer.writeheader()
 
     # So that we don't have to query the club name for each member
-    clubNames = dict()
+    clubNames = {}
     for club in allClubs:
         clubNames[club["cid"]] = club["name"]
 
@@ -481,11 +490,11 @@ async def downloadMembersData(
                         if i.get("end_year") is not None
                         else None,
                     ]
-                    if details.typeRoles == "all":
+                    if details.typeRoles == "all" or (
+                        details.typeRoles == "current"
+                        and roleFormatting[2] is None
+                    ):
                         listOfRoles.append(roleFormatting)
-                    elif details.typeRoles == "current":
-                        if roleFormatting[2] is None:
-                            listOfRoles.append(roleFormatting)
                 value = str(listOfRoles)
             elif field == "poc":
                 value = "Yes" if member["poc"] else "No"
